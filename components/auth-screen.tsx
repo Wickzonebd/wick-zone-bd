@@ -91,7 +91,7 @@ export function AuthScreen({ mode }: { mode: Mode }) {
   const subtitle = mode === "login" ? t("auth.loginSubtitle") : mode === "register" ? t("auth.registerSubtitle") : t("auth.loginSubtitle");
 
   return (
-    <main className="auth-page">
+    <main className={`auth-page auth-page-${mode}`}>
       <section className="auth-card">
         <div style={{ display: "flex", justifyContent: "flex-end" }}><button className="secondary-button" style={{ minHeight: 42 }} onClick={toggleLanguage}><Languages size={17} />{t("common.language")}</button></div>
         {general.logoUrl ? <img className="auth-logo" src={general.logoUrl} alt="" /> : <div className="auth-logo"><LockKeyhole size={34} /></div>}
