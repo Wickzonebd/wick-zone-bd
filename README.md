@@ -67,9 +67,38 @@ When merchant credentials are available:
 - Client upload code limits supported image types and file sizes; bucket limits and RLS provide the server-side boundary.
 - React renders user text as escaped text. External URLs are restricted to HTTP/HTTPS in both application validation and database checks.
 
-## Cloudflare
+## Cloudflare deployment
 
-The project builds to a Cloudflare Worker-compatible ESM entry at `dist/server/index.js`. `wrangler.deploy.jsonc` describes optional direct Workers deployment compatibility without interfering with the Vite preview configuration. ChatGPT Sites uses `.openai/hosting.json` for its production Cloudflare lifecycle; do not put runtime secrets into either configuration file.
+GitHub is the source of truth, Supabase provides the backend, and Cloudflare Workers hosts the web application. The root `wrangler.jsonc` is the only Cloudflare runtime configuration file. This repository does not depend on ChatGPT Sites, D1, or a Cloudflare Images binding.
+
+The application contains server routes, so deploy it as a Cloudflare Worker rather than a static Pages-only project.
+
+For a Git-connected Cloudflare Worker use:
+
+- Production branch: `main`
+- Build command: `npm run build`
+- Deploy command: `npx wrangler deploy`
+- Root directory: repository root
+- Node.js: 22 or newer
+
+Add these build variables in Cloudflare:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_REPLACE_ME
+PAYMENT_GATEWAY=not_configured
+```
+
+Only the Supabase publishable browser key belongs in Cloudflare's public build environment. Never add a Supabase service-role key or future payment secret to frontend variables. Payment provider secrets should be added later as encrypted Worker secrets and used only by server-side integration code.
+
+For a manual deployment from a trusted development machine:
+
+```bash
+npm ci
+npm run deploy
+```
+
+After the first production deployment, add the final Worker URL to Supabase Authentication URL Configuration so password recovery and email redirects return to the deployed application.
 
 ## Quality gates
 

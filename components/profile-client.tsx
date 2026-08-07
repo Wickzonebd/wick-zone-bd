@@ -55,7 +55,7 @@ export function ProfileClient({ requestedUserId }: { requestedUserId?: string })
     if (!requestedUserId) return;
     const supabase = getSupabaseBrowserClient(); if (!supabase) return;
     let actionError = null;
-    if (action === "connect") ({ error: actionError } = await supabase.rpc("send_connection_request", { p_addressee: requestedUserId }));
+    if (action === "connect") ({ error: actionError } = await supabase.rpc("send_connection_request", { p_addressee_id: requestedUserId }));
     else if (action === "remove" && connection) ({ error: actionError } = await supabase.rpc("remove_connection", { p_connection_id: connection.id }));
     else if (connection) ({ error: actionError } = await supabase.rpc("respond_connection_request", { p_connection_id: connection.id, p_action: action }));
     setMessage(actionError ? actionError.message : "Connection updated.");
