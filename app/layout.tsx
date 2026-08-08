@@ -15,8 +15,8 @@ const latinFont = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "WICK ZONE BD",
-  description: "A bilingual community and micro-job platform.",
+  title: "Taskora",
+  description: "Taskora is a bilingual micro-job and social services platform.",
   other: { "codex-preview": "development" },
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
