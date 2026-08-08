@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft, BadgeCheck, Bell, BriefcaseBusiness, ChevronRight, CircleUserRound, Home, Languages, LayoutDashboard, LogOut,
-  Menu, Network, Newspaper, ShieldCheck, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound,
+  Menu, Network, Newspaper, ShoppingCart, ShieldCheck, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -18,8 +18,8 @@ import { isSafeExternalUrl } from "@/lib/url";
 const mainNav = [
   { href: "/dashboard", label: "common.home", icon: Home },
   { href: "/feed", label: "common.feed", icon: Newspaper },
+  { href: "/reselling", label: "common.reselling", icon: ShoppingCart },
   { href: "/jobs", label: "common.jobs", icon: BriefcaseBusiness },
-  { href: "/wallet", label: "common.wallet", icon: WalletCards },
   { href: "/profile", label: "common.profile", icon: CircleUserRound },
 ];
 
@@ -116,7 +116,7 @@ export function AppShell({ children, variant = "default", hidePrimaryNav = false
         <div className="bottom-nav-inner">
           {navItems.map(({ href, text, icon: Icon }) => {
             const active = activePath === href || activePath.startsWith(`${href}/`);
-            return <Link key={href} href={href} className={`nav-item ${active ? "active" : ""}`}>{href === "/profile" && profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="nav-profile-avatar" /> : <Icon size={22} />}<span>{text}</span></Link>;
+            return <Link key={href} href={href} className={`nav-item ${href === "/reselling" ? "nav-item-reselling" : ""} ${active ? "active" : ""}`}><span className="nav-icon-wrap">{href === "/profile" && profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="nav-profile-avatar" /> : <Icon size={22} />}</span><span>{text}</span></Link>;
           })}
         </div>
       </nav>}
