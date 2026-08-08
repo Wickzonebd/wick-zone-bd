@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft, BadgeCheck, Bell, BriefcaseBusiness, CircleUserRound, Home, Languages, LayoutDashboard, LogOut,
   Menu, Network, Newspaper, ShoppingCart, ShieldCheck, Trophy, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound, Info, ScrollText,
-  RotateCw, type LucideIcon,
+  type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
@@ -163,7 +163,6 @@ export function AppShell({ children, variant = "default", hidePrimaryNav = false
                 <button className="drawer-link danger" style={{ border: 0, background: "transparent", width: "100%" }} onClick={async () => { await signOut(); router.replace("/login"); }}><LogOut size={21} />{t("common.logout")}</button>
               </>}
             </div>
-            {!adminNavigation && <button type="button" className="drawer-refresh" title="Refresh" aria-label="Refresh" onClick={() => { router.refresh(); setDrawerOpen(false); }}><RotateCw size={18} /></button>}
           </aside>
         </div>
       )}

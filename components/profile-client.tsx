@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, Camera, Check, CircleUserRound, Copy, KeyRound, Link2, LoaderCircle, Mail, Phone, UserCheck, UserPlus, UserRound, UsersRound, WalletCards, X } from "lucide-react";
+import { BadgeCheck, Camera, Check, CircleUserRound, Copy, KeyRound, Link2, LoaderCircle, Mail, Pencil, Phone, UserCheck, UserPlus, UserRound, UsersRound, WalletCards, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
@@ -27,6 +27,7 @@ export function ProfileClient({ requestedUserId }: { requestedUserId?: string })
   const [message, setMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<"success" | "error">("success");
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [connection, setConnection] = useState<ProfileConnection | null>(null);
   const [posts, setPosts] = useState<ProfilePost[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -72,7 +73,7 @@ export function ProfileClient({ requestedUserId }: { requestedUserId?: string })
     if (profileResult.error) { setMessageType("error"); setMessage("Profile could not be updated."); return; }
     if (normalizedPhone) { const { error: phoneError } = await supabase.rpc("update_private_phone", { p_mobile: normalizedPhone }); if (phoneError) { setMessageType("error"); setMessage("That mobile number is already in use."); return; } }
     if (email.trim().toLowerCase() !== user.email?.toLowerCase()) { const { error: emailError } = await supabase.auth.updateUser({ email: email.trim().toLowerCase() }); if (emailError) { setMessageType("error"); setMessage("Email change could not be started."); return; } }
-    await refresh(); setMessageType("success"); setMessage("Profile updated.");
+    await refresh(); setMessageType("success"); setMessage(language === "bn" ? "প্রোফাইল আপডেট হয়েছে।" : "Profile updated."); setEditing(false);
   };
 
   const uploadAvatar = async (file: File | undefined) => {
@@ -99,6 +100,7 @@ export function ProfileClient({ requestedUserId }: { requestedUserId?: string })
   if (error || !shownProfile) return <AppShell><main className="profile-page"><div className="profile-container"><ErrorState message={t("common.error")} /></div></main></AppShell>;
   return <AppShell><main className="profile-page"><div className="profile-container">
     <section className="profile-hero-card">
+      {isOwn && !editing && <button type="button" className="profile-edit-trigger" aria-label={language === "bn" ? "প্রোফাইল এডিট করুন" : "Edit profile"} title={language === "bn" ? "প্রোফাইল এডিট করুন" : "Edit profile"} onClick={() => { setMessage(null); setEditing(true); }}><Pencil size={17} /><span>{language === "bn" ? "এডিট" : "Edit"}</span></button>}
       <div className="profile-cover-strip" />
       <div className="profile-hero-content">
         <div className="profile-avatar-wrap">
@@ -112,7 +114,7 @@ export function ProfileClient({ requestedUserId }: { requestedUserId?: string })
             {customBadge && <span className="profile-custom-badge">{customBadge}</span>}
           </div>
           {shownProfile.bio && <p className="profile-bio">{shownProfile.bio}</p>}
-          {isOwn && <p className="profile-photo-hint">{language === "bn" ? "ক্যামেরা আইকনে চাপ দিয়ে নিজের ছবি দিন · সর্বোচ্চ 5MB" : "Tap the camera to upload your photo · up to 5MB"}</p>}
+          {isOwn && editing && <p className="profile-photo-hint">{language === "bn" ? "ক্যামেরা আইকনে চাপ দিয়ে নিজের ছবি দিন · সর্বোচ্চ 5MB" : "Tap the camera to upload your photo · up to 5MB"}</p>}
           {!isOwn && <div className="profile-connection-actions">{!connection && <button className="primary-button" onClick={() => void changeConnection("connect")}><UserPlus size={18} />{t("feed.connect")}</button>}{connection?.status === "accepted" && <button className="secondary-button" onClick={() => void changeConnection("remove")}><UserCheck size={18} />{t("feed.connected")}</button>}{connection?.status === "pending" && connection.requester_id === user?.id && <span className="status pending">{t("feed.pending")}</span>}{connection?.status === "pending" && connection.addressee_id === user?.id && <><button className="primary-button" onClick={() => void changeConnection("accept")}><Check size={18} />{t("network.accept")}</button><button className="secondary-button" onClick={() => void changeConnection("reject")}><X size={18} />{t("network.reject")}</button></>}</div>}
         </div>
       </div>
@@ -120,8 +122,16 @@ export function ProfileClient({ requestedUserId }: { requestedUserId?: string })
 
     {message && <div className={`form-message ${messageType}`}>{message}</div>}
 
-    {isOwn && <form className="profile-card profile-edit-card" onSubmit={save}>
-      <div className="profile-section-heading"><div className="profile-section-icon"><UserRound size={20} /></div><div><h2>{t("profile.update")}</h2><p>{language === "bn" ? "আপনার ব্যক্তিগত তথ্য আপডেট করুন" : "Keep your personal information up to date"}</p></div></div>
+    {isOwn && !editing && <section className="profile-card profile-overview-card">
+      <div className="profile-overview-head"><div><span>{language === "bn" ? "আপনার প্রোফাইল" : "Your profile"}</span><h2>{language === "bn" ? "অ্যাকাউন্ট তথ্য" : "Account details"}</h2></div><button type="button" onClick={() => { setMessage(null); setEditing(true); }}><Pencil size={16} />{language === "bn" ? "পরিবর্তন" : "Edit"}</button></div>
+      <div className="profile-overview-grid">
+        <div className="profile-overview-item"><span className="profile-overview-icon"><Mail size={18} /></span><div><small>{t("profile.email")}</small><strong>{email || (language === "bn" ? "যোগ করা হয়নি" : "Not added")}</strong></div></div>
+        <div className="profile-overview-item"><span className="profile-overview-icon"><Phone size={18} /></span><div><small>{t("profile.mobile")}</small><strong>{mobile || (language === "bn" ? "যোগ করা হয়নি" : "Not added")}</strong></div></div>
+      </div>
+    </section>}
+
+    {isOwn && editing && <form className="profile-card profile-edit-card" onSubmit={save}>
+      <div className="profile-edit-head"><div className="profile-section-heading"><div className="profile-section-icon"><Pencil size={20} /></div><div><h2>{t("profile.update")}</h2><p>{language === "bn" ? "আপনার ব্যক্তিগত তথ্য আপডেট করুন" : "Keep your personal information up to date"}</p></div></div><button type="button" className="profile-edit-close" aria-label={language === "bn" ? "এডিট বন্ধ করুন" : "Close editing"} onClick={() => { setEditing(false); setMessage(null); setName(shownProfile.full_name ?? ""); setBio(shownProfile.bio ?? ""); setEmail(user?.email ?? ""); setRefreshKey((value) => value + 1); }}><X size={18} /></button></div>
       <div className="profile-form-grid">
         <div className="field profile-form-wide"><label>{t("profile.name")}</label><div className="input-wrap"><UserRound size={19} /><input className="input with-icon" value={name} onChange={(event) => setName(event.target.value)} required /></div></div>
         <div className="field"><label>{t("profile.email")}</label><div className="input-wrap"><Mail size={19} /><input className="input with-icon" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></div></div>

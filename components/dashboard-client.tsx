@@ -232,6 +232,18 @@ export function DashboardClient() {
             </div> : <div className="home-marketplace-empty">{language === "bn" ? `${marketplacePlatformLabels[selectedMarketplacePlatform]}-এর কোনো সার্ভিস এখনো যোগ করা হয়নি।` : `No ${marketplacePlatformLabels[selectedMarketplacePlatform]} services have been added yet.`}</div>}
           </section>
 
+          <section className="home-section home-reference-section home-official-section">
+            <div className="home-section-head"><div className="home-section-title"><span className="home-section-icon"><Link2 size={20} /></span><div><h2>{language === "bn" ? "অফিসিয়াল এক্সেস পোর্টাল" : "Official access portal"}</h2><small>{language === "bn" ? "Facebook, Telegram, YouTube ও WhatsApp-এর অফিসিয়াল গ্রুপ লিংক" : "Official Facebook, Telegram, YouTube and WhatsApp links"}</small></div></div><div className="home-live"><span />Live</div></div>
+            <div className="home-social-grid">{portalItems.map((item) => {
+              const link = item.link;
+              const Icon = iconMap[(link?.icon_name ?? "globe").toLowerCase() as keyof typeof iconMap] ?? Globe2;
+              const content = <><div className="home-social-icon">{link?.icon_url ? <img src={link.icon_url} alt="" /> : item.brand ? <SocialBrandIcon brand={item.brand} /> : <Icon size={27} />}</div><strong>{item.label}</strong></>;
+              return link && isSafeExternalUrl(link.destination_url)
+                ? <a key={item.key} className="home-social-card" href={link.destination_url} target="_blank" rel="noreferrer">{content}</a>
+                : <div key={item.key} className="home-social-card is-placeholder" aria-disabled="true">{content}</div>;
+            })}</div>
+          </section>
+
           <section className="home-storefront">
             <div className="home-section-head"><div className="home-section-title"><span className="home-section-icon"><PackageOpen size={20} /></span><div><h2>{language === "bn" ? "আমাদের প্রোডাক্ট" : "Our Products"}</h2><small>{language === "bn" ? "রিসেলিং স্টোরের নতুন ও জনপ্রিয় প্রোডাক্ট" : "Featured and recent products from the Reselling store"}</small></div></div><Link href="/reselling" className="home-storefront-view-all">{language === "bn" ? "সব দেখুন" : "View all"}<ChevronRight size={15} /></Link></div>
             {loading ? <div className="home-storefront-grid">{[0,1,2,3].map((item) => <div className="skeleton home-storefront-skeleton" key={item} />)}</div> : homeProducts.length ? <div className="home-storefront-grid">{homeProducts.map((product) => {
@@ -245,20 +257,8 @@ export function DashboardClient() {
             })}</div> : <div className="home-marketplace-empty">{language === "bn" ? "রিসেলিং-এ এখনো কোনো প্রোডাক্ট প্রকাশ করা হয়নি।" : "No Reselling products have been published yet."}</div>}
           </section>
 
-          <section className="home-section">
-            <div className="home-section-head"><div className="home-section-title"><span className="home-section-icon"><Link2 size={20} /></span><h2>{language === "bn" ? "অফিসিয়াল এক্সপ্রেস পোর্টাল" : "Official access portal"}</h2></div><div className="home-live"><span />Live</div></div>
-            <div className="home-social-grid">{portalItems.map((item) => {
-              const link = item.link;
-              const Icon = iconMap[(link?.icon_name ?? "globe").toLowerCase() as keyof typeof iconMap] ?? Globe2;
-              const content = <><div className="home-social-icon">{link?.icon_url ? <img src={link.icon_url} alt="" /> : item.brand ? <SocialBrandIcon brand={item.brand} /> : <Icon size={27} />}</div><strong>{item.label}</strong></>;
-              return link && isSafeExternalUrl(link.destination_url)
-                ? <a key={item.key} className="home-social-card" href={link.destination_url} target="_blank" rel="noreferrer">{content}</a>
-                : <div key={item.key} className="home-social-card is-placeholder" aria-disabled="true">{content}</div>;
-            })}</div>
-          </section>
-
-          <section className="home-section">
-            <div className="home-section-head"><div className="home-section-title"><span className="home-section-icon"><Zap size={20} /></span><h2>{language === "bn" ? "আমাদের প্রজেক্ট সমূহ" : "Our projects"}</h2></div><div className="home-project-live"><span />Project Links</div></div>
+          <section className="home-section home-reference-section home-projects-section">
+            <div className="home-section-head"><div className="home-section-title"><span className="home-section-icon"><Zap size={20} /></span><div><h2>{language === "bn" ? "আমাদের প্রজেক্ট সমূহ" : "Our projects"}</h2><small>{language === "bn" ? "আমাদের অন্যান্য সেবা ও কমিউনিটি প্রজেক্ট" : "Explore our services and community projects"}</small></div></div><div className="home-project-live"><span />Project Links</div></div>
             {loading ? <div className="home-project-grid">{[0,1,2].map((item) => <div key={item} className="skeleton home-project-skeleton" />)}</div> : projects.length ? <div className="home-project-grid">{projects.map((project) => {
               const ProjectIcon = iconMap[(project.icon_name ?? "").toLowerCase() as keyof typeof iconMap] ?? ImageIcon;
               const content = <><div className="home-project-icon">{project.image_url ? <img src={project.image_url} alt="" /> : <ProjectIcon size={25} />}</div><strong>{language === "bn" && project.title_bn ? project.title_bn : project.title_en}</strong></>;
