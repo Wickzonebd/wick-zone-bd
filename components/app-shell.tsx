@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell, BriefcaseBusiness, ChevronRight, CircleUserRound, Home, Languages, LayoutDashboard, LogOut,
-  Menu, Network, Newspaper, ShieldCheck, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound, CirclePlay,
+  BadgeCheck, Bell, BriefcaseBusiness, ChevronRight, CircleUserRound, Home, Languages, LayoutDashboard, LogOut,
+  Menu, Network, Newspaper, ShieldCheck, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
@@ -19,14 +19,6 @@ const mainNav = [
   { href: "/jobs", label: "common.jobs", icon: BriefcaseBusiness },
   { href: "/wallet", label: "common.wallet", icon: WalletCards },
   { href: "/profile", label: "common.profile", icon: CircleUserRound },
-];
-
-const homeNav = [
-  { href: "/dashboard", bn: "হোম", en: "Home", icon: Home },
-  { href: "/wallet", bn: "ওয়ালেট", en: "Wallet", icon: WalletCards },
-  { href: "/jobs", bn: "কোর্স", en: "Course", icon: CirclePlay },
-  { href: "/network", bn: "নেটওয়ার্ক", en: "Network", icon: Network },
-  { href: "/profile", bn: "প্রোফাইল", en: "Profile", icon: CircleUserRound },
 ];
 
 const drawerNav = [
@@ -70,9 +62,7 @@ export function AppShell({ children, variant = "default" }: { children: React.Re
   const activePath = useMemo(() => (pathname === "/" ? "/dashboard" : pathname), [pathname]);
   const homeVariant = variant === "home";
   const feedVariant = variant === "feed";
-  const navItems = homeVariant
-    ? homeNav.map((item) => ({ href: item.href, icon: item.icon, text: language === "bn" ? item.bn : item.en }))
-    : mainNav.map((item) => ({ href: item.href, icon: item.icon, text: t(item.label) }));
+  const navItems = mainNav.map((item) => ({ href: item.href, icon: item.icon, text: t(item.label) }));
   const supportHref = isSafeExternalUrl(support.contactUrl)
     ? support.contactUrl
     : support.phone && /^\+?[0-9 ()-]{5,25}$/.test(support.phone) ? `tel:${support.phone.replace(/[^+0-9]/g, "")}` : null;
@@ -103,7 +93,7 @@ export function AppShell({ children, variant = "default" }: { children: React.Re
         <div className="bottom-nav-inner">
           {navItems.map(({ href, text, icon: Icon }) => {
             const active = activePath === href || activePath.startsWith(`${href}/`);
-            return <Link key={href} href={href} className={`nav-item ${active ? "active" : ""}`}><Icon size={22} /><span>{text}</span></Link>;
+            return <Link key={href} href={href} className={`nav-item ${active ? "active" : ""}`}>{href === "/profile" && profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="nav-profile-avatar" /> : <Icon size={22} />}<span>{text}</span></Link>;
           })}
         </div>
       </nav>
@@ -120,7 +110,7 @@ export function AppShell({ children, variant = "default" }: { children: React.Re
             <div style={{ display: "flex", justifyContent: "flex-end", padding: 12 }}><button className="secondary-button" style={{ minHeight: 44, width: 44, padding: 0 }} onClick={() => setDrawerOpen(false)}><X size={20} /></button></div>
             <div className="drawer-profile">
               {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="drawer-avatar" /> : <div className="drawer-avatar"><CircleUserRound size={38} /></div>}
-              <h2 style={{ margin: 0, fontSize: "1.35rem" }}>{profile?.full_name ?? user.email}</h2>
+              <h2 style={{ margin: 0, fontSize: "1.35rem", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>{profile?.full_name ?? user.email}{membership?.status === "active" && <BadgeCheck className="verified-check" size={20} aria-label="Verified" />}</h2>
               <span className={`status ${membership?.status === "active" ? "active" : "pending"}`} style={{ marginTop: 9 }}>
                 {membership?.status === "active" ? <ShieldCheck size={14} /> : <LockKeyhole size={14} />}{membership?.status ?? "locked"}
               </span>
