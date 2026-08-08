@@ -77,7 +77,7 @@ interface DisplayRow {
 }
 
 const contentKinds: Array<{ id: ContentKind; label: string; helper: string; icon: typeof Link2 }> = [
-  { id: "service", label: "Services", helper: "Official portal links", icon: Link2 },
+  { id: "service", label: "Portal Links", helper: "Official social & community links", icon: Link2 },
   { id: "project", label: "Projects", helper: "Project & service cards", icon: Layers3 },
   { id: "banner", label: "Banners", helper: "Home hero images", icon: PanelTopOpen },
   { id: "ticker", label: "Ticker", helper: "Scrolling announcements", icon: Megaphone },
@@ -267,7 +267,7 @@ export function AdminContentManager({ onChanged }: { onChanged?: () => Promise<v
       <div className="admin-section-head">
         <div>
           <span className="admin-kicker">SITE BUILDER</span>
-          <h2>Services & content</h2>
+          <h2>Site content</h2>
           <p>Add the links, project cards, images and announcements that appear on the member-facing site.</p>
         </div>
       </div>
@@ -301,7 +301,7 @@ export function AdminContentManager({ onChanged }: { onChanged?: () => Promise<v
           </div>}
 
           <div className="field">
-            <label>{kind === "service" ? "Service destination URL" : "Destination URL (optional)"}</label>
+            <label>{kind === "service" ? "Portal destination URL" : "Destination URL (optional)"}</label>
             <input className="input" type="url" value={destinationUrl} onChange={(event) => setDestinationUrl(event.target.value)} required={kind === "service"} placeholder="https://…" />
           </div>
 
@@ -310,7 +310,7 @@ export function AdminContentManager({ onChanged }: { onChanged?: () => Promise<v
           {acceptsImage && <div className="admin-upload-grid">
             <label className="admin-upload-box">
               <span className="admin-upload-icon"><UploadCloud size={22} /></span>
-              <strong>{kind === "service" ? "Upload service icon" : kind === "project" ? "Upload project image" : "Upload banner image"}</strong>
+              <strong>{kind === "service" ? "Upload portal icon" : kind === "project" ? "Upload project image" : "Upload banner image"}</strong>
               <small>JPG, PNG or WebP · max 5 MB</small>
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setMediaFile(event.target.files?.[0] ?? null)} />
               {mediaFile && <em>{mediaFile.name}</em>}
