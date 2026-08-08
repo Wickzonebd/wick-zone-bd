@@ -13,6 +13,7 @@ const defaultGeneral: SiteGeneralSettings = {
   backgroundColor: "#FFF9ED",
   currency: "BDT",
   activationPrice: null,
+  socialVerificationPrice: null,
   activationGateScope: "micro_jobs",
   memberBadgeWording: "Member",
   withdrawalMinimum: 0,
