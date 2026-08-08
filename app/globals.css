@@ -538,6 +538,35 @@ img { max-width: 100%; }
 .facebook-feed-main { min-height: 100dvh; background: #f0f2f5; }
 .facebook-feed-container { width: min(100%,680px); margin: 0 auto; padding: 16px 12px 40px; }
 
+.taskora-social-header { overflow:hidden; margin-bottom:14px; border:1px solid #d8e4f5; border-radius:16px; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.08); }
+.taskora-social-brand { min-height:72px; padding:13px 16px; display:flex; align-items:center; gap:11px; color:#fff; background:linear-gradient(120deg,#1877f2,#326fe8 55%,#6558e8); }
+.taskora-social-mark { width:44px; height:44px; flex:0 0 44px; border:2px solid rgba(255,255,255,.6); border-radius:14px; display:grid; place-items:center; background:rgba(255,255,255,.16); font-size:25px; font-weight:900; box-shadow:inset 0 1px rgba(255,255,255,.35); }
+.taskora-social-brand div { min-width:0; display:grid; gap:2px; }
+.taskora-social-brand div > span { color:rgba(255,255,255,.75); font-size:9px; font-weight:850; letter-spacing:.16em; }
+.taskora-social-brand strong { font-size:19px; letter-spacing:-.02em; }
+.taskora-social-shortcuts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.taskora-social-shortcut { min-height:55px; padding:8px 5px; display:flex; align-items:center; justify-content:center; gap:7px; color:#606770; border-right:1px solid #edf0f4; text-decoration:none; font-size:12px; font-weight:700; }
+.taskora-social-shortcut:last-child { border-right:0; }
+.taskora-social-shortcut:hover { color:#1877f2; background:#f6f9fe; }
+
+.social-verify-card { position:relative; margin-bottom:12px; padding:15px; border:1px solid #d9e8fb; border-radius:16px; display:grid; grid-template-columns:45px minmax(0,1fr) auto; align-items:center; gap:11px; background:linear-gradient(135deg,#fff,#f5f9ff); box-shadow:0 1px 2px rgba(0,0,0,.06); }
+.social-verify-card.verified { border-color:#c8e8da; background:linear-gradient(135deg,#fff,#f2fbf7); }
+.social-verify-icon { width:45px; height:45px; border-radius:50%; display:grid; place-items:center; color:#fff; background:#1877f2; box-shadow:0 7px 18px rgba(24,119,242,.24); }
+.social-verify-card.verified .social-verify-icon { background:#17966c; box-shadow:0 7px 18px rgba(23,150,108,.2); }
+.social-verify-copy { min-width:0; }
+.social-verify-copy > span { display:block; margin-bottom:2px; color:#8893a2; font-size:9px; font-weight:850; letter-spacing:.08em; text-transform:uppercase; }
+.social-verify-copy strong { color:#182338; font-size:14px; }
+.social-verify-copy p { margin:4px 0 0; color:#687385; font-size:10px; line-height:1.45; }
+.social-verify-button { min-height:46px; padding:7px 11px; border:0; border-radius:12px; display:flex; align-items:center; justify-content:center; gap:6px; color:#fff; background:#1877f2; font:inherit; font-size:10px; font-weight:800; cursor:pointer; box-shadow:0 8px 17px rgba(24,119,242,.2); }
+.social-verify-button span { display:grid; gap:1px; text-align:left; white-space:nowrap; }
+.social-verify-button small { color:rgba(255,255,255,.72); font-size:8px; font-weight:650; }
+.social-verify-button:disabled { cursor:not-allowed; color:#8b96a7; background:#e5e9ef; box-shadow:none; }
+.social-verify-button:disabled small { color:#9da6b4; }
+.social-verify-button .spin { animation:social-spin .75s linear infinite; }
+.social-verified-state { padding:7px 10px; border-radius:999px; display:inline-flex; align-items:center; gap:5px; color:#14785a; background:#e7f7f0; font-size:10px; font-weight:850; }
+.social-verify-message { margin:-2px 0 12px; padding:9px 12px; border:1px solid #d8e7fb; border-radius:10px; color:#315d94; background:#f3f8ff; font-size:11px; font-weight:650; }
+@keyframes social-spin { to { transform:rotate(360deg); } }
+
 .facebook-create-post { padding: 16px; margin-bottom: 16px; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.1); }
 .facebook-create-top { display: flex; align-items: center; gap: 12px; }
 .facebook-avatar { width: 42px; height: 42px; flex: 0 0 42px; overflow: hidden; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #1877f2; font-size: 18px; font-weight: 750; text-decoration: none; }
@@ -557,6 +586,8 @@ img { max-width: 100%; }
 .facebook-post-name strong { min-width: 0; overflow-wrap: anywhere; font-size: 15px; font-weight: 650; }
 .feed-verified-badge { display: inline-flex; align-items: center; gap: 3px; color: #1877f2; font-size: 11px; font-weight: 750; }
 .feed-verified-badge svg { flex: 0 0 auto; color: #fff; fill: #1877f2; stroke: #fff; stroke-width: 2.4; }
+.facebook-comment-author { display:flex; align-items:center; gap:4px; }
+.facebook-comment-author svg { color:#fff; fill:#1877f2; stroke:#fff; stroke-width:2.4; }
 .facebook-post-info > span { display: block; margin-top: 2px; color: #65676b; font-size: 12px; }
 .facebook-post-menu-wrap { position: relative; }
 .facebook-more-button { width: 38px; height: 38px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; color: #65676b; background: transparent; }
@@ -602,6 +633,14 @@ img { max-width: 100%; }
   .facebook-post-action { gap: 4px; font-size: 12px; }
   .facebook-composer-extras { grid-template-columns: 1fr; }
   .facebook-photo-picker { width: 100%; }
+}
+
+@media (max-width: 560px) {
+  .social-verify-card { grid-template-columns:40px minmax(0,1fr); padding:13px; }
+  .social-verify-icon { width:40px; height:40px; }
+  .social-verify-button,.social-verified-state { grid-column:1/-1; width:100%; }
+  .social-verify-button span { text-align:center; }
+  .taskora-social-shortcut { gap:5px; font-size:11px; }
 }
 
 @media (min-width: 860px) {
@@ -1058,6 +1097,18 @@ img { max-width: 100%; }
 .admin-reselling-card-body { min-width: 0; flex: 1; }
 .admin-reselling-card-body h3 { margin: 3px 0 7px; font-size: 14px; }
 .admin-reselling-card-body p { margin: 4px 0 9px; font-size: 11px; }
+.admin-product-image-upload { min-height:92px; padding:11px; border:1.5px dashed #c8d3e0; border-radius:16px; display:flex; align-items:center; gap:12px; color:#516076; background:#f9fbfd; cursor:pointer; transition:.18s ease; }
+.admin-product-image-upload:hover { border-color:var(--primary); background:#fff8f5; }
+.admin-product-image-icon { width:66px; height:66px; flex:0 0 66px; overflow:hidden; border-radius:13px; display:grid; place-items:center; color:var(--primary); background:#fff0ea; }
+.admin-product-image-icon img { width:100%; height:100%; object-fit:cover; }
+.admin-product-image-upload > span:last-of-type { min-width:0; display:grid; gap:4px; }
+.admin-product-image-upload strong { color:#263348; font-size:12px; overflow-wrap:anywhere; }
+.admin-product-image-upload small { color:#8791a1; font-size:9px; line-height:1.4; }
+.admin-blue-badge { display:inline-flex; align-items:center; gap:4px; color:#0d67d9 !important; background:#e9f3ff !important; }
+.admin-blue-badge svg { color:#fff; fill:#1877f2; stroke:#fff; }
+.admin-blue-badge-button { white-space:nowrap; }
+.admin-blue-badge-price { padding:12px; border:1px solid #dce9fa; border-radius:14px; background:#f7faff; }
+.admin-blue-badge-price small { color:#6e7d91; font-size:10px; line-height:1.45; }
 
 @media (min-width: 620px) {
   .reselling-product-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
