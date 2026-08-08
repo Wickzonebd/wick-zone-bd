@@ -1599,21 +1599,21 @@ img { max-width: 100%; }
 .home-storefront-image img { transition:transform .3s ease; }
 .home-storefront-card:hover .home-storefront-image img { transform:scale(1.055); }
 
-/* Micro-jobs: horizontal task cards with data-backed progress/status. */
+/* Micro-jobs: compact grid cards with data-backed progress/status. */
 .hub-app-frame { --hub-primary:#ff5722; --hub-primary-dark:#d94316; --hub-primary-soft:#fff0eb; --hub-bg:#f8f9fa; --hub-text:#2c3e50; --hub-border:#e4e9ed; }
 .hub-app-header { background:linear-gradient(120deg,#ff5722,#ff7043); }
 .micro-jobs-page { padding-bottom:48px; background:radial-gradient(circle at 92% 3%,rgba(255,87,34,.1),transparent 260px),var(--taskora-soft); }
 .micro-jobs-page-header h1 { color:var(--taskora-charcoal); }
 .micro-jobs-briefcase { border-color:#ffe1d6; color:var(--taskora-orange); background:rgba(255,255,255,.86); box-shadow:0 10px 24px rgba(44,62,80,.09); }
 .micro-jobs-locked-card { border-color:#ffe0d4; border-radius:24px; background:rgba(255,255,255,.86); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); box-shadow:0 12px 30px rgba(44,62,80,.08); }
-.micro-jobs-grid { grid-template-columns:1fr; gap:12px; }
-.micro-job-card { min-height:184px; border-color:#e4e9ed; border-radius:22px; display:grid; grid-template-columns:112px minmax(0,1fr); background:rgba(255,255,255,.94); box-shadow:0 10px 26px rgba(44,62,80,.075); }
+.micro-jobs-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.micro-job-card { min-width:0; min-height:0; overflow:hidden; border-color:#e4e9ed; border-radius:20px; display:flex; flex-direction:column; background:rgba(255,255,255,.94); box-shadow:0 10px 26px rgba(44,62,80,.075); }
 .micro-job-card:hover { transform:translateY(-3px); border-color:#ffb9a1; box-shadow:0 16px 34px rgba(44,62,80,.12); }
-.micro-job-thumb { width:100%; height:100%; min-height:184px; overflow:hidden; background:linear-gradient(145deg,#fff4ef,#ffe7dd); }
+.micro-job-thumb { width:100%; height:auto; min-height:0; aspect-ratio:16/10; overflow:hidden; background:linear-gradient(145deg,#fff4ef,#ffe7dd); }
 .micro-job-thumb > img { transition:transform .3s ease; }
 .micro-job-card:hover .micro-job-thumb > img { transform:scale(1.045); }
 .micro-job-code { top:10px; left:9px; padding:4px 7px; color:#fff; background:rgba(44,62,80,.88); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); box-shadow:none; font-size:8px; }
-.micro-job-body { min-width:0; padding:13px 14px 12px; }
+.micro-job-body { min-width:0; flex:1; padding:11px 10px 12px; }
 .micro-job-meta-row { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:6px; }
 .micro-job-meta-row > span { overflow:hidden; color:#8794a1; font-size:8px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap; text-overflow:ellipsis; }
 .micro-job-status { flex:0 0 auto; padding:4px 7px; border-radius:999px; font-size:7.5px; font-weight:900; text-transform:uppercase; }
@@ -1621,13 +1621,13 @@ img { max-width: 100%; }
 .micro-job-status.high { color:#bd3c14; background:#ffebe4; }
 .micro-job-status.urgent { color:#a82536; background:#ffe6ea; }
 .micro-job-status.open { color:#496278; background:#edf3f7; }
-.micro-job-body h2 { flex:0 0 auto; margin:0 0 4px; color:var(--taskora-charcoal); font-size:13px; font-weight:800; line-height:1.32; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.micro-job-body > p { margin:0 0 8px; overflow:hidden; color:#82909d; font-size:9px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-.micro-job-value-row { display:flex; align-items:flex-end; justify-content:space-between; gap:8px; }
+.micro-job-body h2 { flex:0 0 auto; min-height:34px; margin:0 0 4px; color:var(--taskora-charcoal); font-size:12px; font-weight:800; line-height:1.38; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.micro-job-body > p { min-height:25px; margin:0 0 8px; overflow:hidden; color:#82909d; font-size:8px; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.micro-job-value-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:5px; }
 .micro-job-value-row > div { min-width:0; }
 .micro-job-value-row small { display:block; color:#9aa5af; font-size:7px; font-weight:750; text-transform:uppercase; }
-.micro-job-value-row > span { flex:0 0 auto; color:#788693; font-size:8px; font-weight:700; }
-.micro-job-reward { display:block; margin-top:1px; color:var(--taskora-orange); font-size:15px; font-weight:900; }
+.micro-job-value-row > span { max-width:70px; color:#788693; font-size:7px; line-height:1.25; font-weight:700; text-align:right; }
+.micro-job-reward { display:block; margin-top:1px; color:var(--taskora-orange); font-size:14px; font-weight:900; }
 .micro-job-progress-head { margin-top:8px; display:flex; align-items:center; justify-content:space-between; gap:8px; color:#84919e; font-size:7.5px; font-weight:750; }
 .micro-job-progress-head strong { color:var(--taskora-charcoal); }
 .micro-job-progress { height:6px; margin-top:4px; overflow:hidden; border-radius:999px; background:#edf0f2; }
@@ -1721,7 +1721,11 @@ img { max-width: 100%; }
   .home-summary-icon { width:44px; height:44px; flex:0 0 44px; }
   .home-summary-card small { font-size:9px; }
   .home-summary-card strong { font-size:16px; }
-  .micro-jobs-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+  .micro-jobs-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+}
+
+@media (min-width:1040px) {
+  .micro-jobs-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
 }
 
 @media (max-width:520px) {
@@ -1729,8 +1733,9 @@ img { max-width: 100%; }
   .home-ludo-icon { width:52px; height:52px; border-radius:17px; }
   .home-ludo-cta { grid-column:1/-1; width:100%; min-height:38px; }
   .micro-jobs-page { padding-inline:11px; }
-  .micro-job-card { grid-template-columns:94px minmax(0,1fr); }
-  .micro-job-thumb { min-height:186px; }
+  .micro-jobs-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .micro-job-card { border-radius:18px; }
+  .micro-job-thumb { min-height:0; aspect-ratio:16/10; }
   .micro-job-body { padding:11px 10px 10px; }
   .micro-job-body h2 { font-size:11.5px; }
   .micro-job-body > p { font-size:8px; }
