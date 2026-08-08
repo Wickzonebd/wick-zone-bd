@@ -876,3 +876,78 @@ img { max-width: 100%; }
   .custom-wallet-history-icon { width: 40px; height: 40px; }
   .custom-wallet-history-row > strong { grid-column: 2; text-align: left; }
 }
+
+
+/* Taskora brand, WordPress-style admin navigation, and social-service catalog */
+.taskora-mark { display:block; flex:0 0 auto; color:var(--primary,#ff4d1f); }
+.taskora-lockup { display:inline-flex; align-items:center; gap:10px; min-width:0; }
+.taskora-wordmark { color:inherit; font-size:1.32rem; font-weight:900; letter-spacing:-.035em; line-height:1; }
+.auth-taskora-brand { justify-content:center; width:100%; margin:2px auto 18px; color:#1f2937; }
+.auth-taskora-brand .taskora-wordmark { font-size:1.72rem; }
+.brand .taskora-mark { color:#fff; filter:drop-shadow(0 5px 12px rgba(135,35,7,.16)); }
+.hub-taskora-mark { color:#fff; }
+.drawer-close-row { display:flex; justify-content:flex-end; padding:12px; }
+.drawer-close-row .secondary-button { min-height:44px; width:44px; padding:0; }
+
+.drawer.admin-drawer { background:#1f2733; color:#e8edf3; border-right:1px solid rgba(255,255,255,.08); box-shadow:18px 0 50px rgba(15,23,42,.28); }
+.admin-drawer .drawer-close-row .secondary-button { color:#e8edf3; background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.1); }
+.admin-drawer-head { padding:4px 22px 20px; border-bottom:1px solid rgba(255,255,255,.09); display:grid; gap:7px; }
+.admin-drawer-head .taskora-mark { color:var(--primary); }
+.admin-drawer-head .taskora-wordmark { color:#fff; font-size:1.5rem; }
+.admin-drawer-head > span { color:#99a6b5; font-size:.76rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+.admin-drawer-head > small { display:flex; align-items:center; gap:6px; color:#9de4b1; font-weight:700; }
+.admin-drawer .drawer-menu { padding:10px 0 22px; gap:0; }
+.admin-drawer-link { width:100%; min-height:48px; padding:0 22px; border:0 !important; border-radius:0 !important; background:transparent !important; color:#c8d0da !important; text-align:left; font:inherit; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:12px; position:relative; }
+.admin-drawer-link:hover { background:rgba(255,255,255,.06) !important; color:#fff !important; }
+.admin-drawer-link.active { background:rgba(255,77,31,.14) !important; color:#fff !important; box-shadow:inset 3px 0 0 var(--primary); }
+.admin-drawer-link.active svg { color:#ff7957; }
+.admin-drawer-active-dot { width:7px; height:7px; border-radius:999px; background:var(--primary); margin-left:auto; box-shadow:0 0 0 4px rgba(255,77,31,.13); }
+.admin-drawer-divider { height:1px; background:rgba(255,255,255,.09); margin:10px 18px; }
+.admin-drawer-link.danger { color:#ffaaa1 !important; }
+
+.admin-services { display:grid; gap:15px; }
+.admin-service-layout { display:grid; grid-template-columns:minmax(300px,420px) minmax(0,1fr); gap:16px; align-items:start; }
+.admin-service-form { padding:18px; display:grid; gap:14px; position:sticky; top:88px; }
+.admin-service-form-title { display:flex; align-items:center; gap:11px; padding-bottom:3px; }
+.admin-service-form-title > div { display:grid; gap:2px; }
+.admin-service-form-title strong { font-size:1.05rem; }
+.admin-service-form-title small { color:var(--muted); }
+.admin-service-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.admin-service-form-grid.align-end { align-items:end; }
+.admin-service-active { min-height:52px; border:1px solid var(--line); border-radius:14px; padding:0 13px; display:flex; align-items:center; gap:9px; font-weight:750; background:#fffaf5; }
+.admin-service-active input { width:18px; height:18px; accent-color:var(--primary); }
+.admin-service-form-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.admin-service-list { display:grid; gap:10px; }
+.admin-service-card { padding:15px; display:flex; gap:13px; align-items:flex-start; }
+.admin-service-card.is-inactive { opacity:.66; }
+.admin-service-platform { width:48px; height:48px; flex:0 0 48px; border-radius:15px; display:grid; place-items:center; color:#fff; font-size:1.15rem; font-weight:900; box-shadow:0 8px 18px rgba(15,23,42,.12); background:var(--primary); }
+.admin-service-platform.facebook { background:#1877f2; }
+.admin-service-platform.instagram { background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045); }
+.admin-service-platform.youtube { background:#ff0000; }
+.admin-service-platform.tiktok { background:#111827; box-shadow:3px 3px 0 #25f4ee,-3px -3px 0 #fe2c55; }
+.admin-service-platform.other { background:#64748b; }
+.admin-service-card-body { min-width:0; flex:1; display:grid; gap:8px; }
+.admin-service-card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.admin-service-card h3 { margin:4px 0 0; font-size:1rem; }
+.admin-service-chip { display:inline-flex; padding:4px 8px; border-radius:999px; background:#fff2ec; color:#b83a17; font-size:.7rem; font-weight:850; letter-spacing:.02em; }
+.admin-service-price { display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; }
+.admin-service-price strong { color:var(--primary); font-size:1.15rem; }
+.admin-service-price span { color:var(--muted); font-size:.85rem; font-weight:700; }
+.admin-service-card p { margin:0; }
+.admin-service-card-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.admin-service-empty { min-height:150px; padding:24px; display:grid; place-items:center; align-content:center; gap:6px; text-align:center; color:var(--muted); }
+.admin-service-empty strong { color:var(--text); }
+
+@media (max-width: 920px) {
+  .admin-service-layout { grid-template-columns:1fr; }
+  .admin-service-form { position:static; }
+}
+@media (max-width: 560px) {
+  .taskora-wordmark { font-size:1.2rem; }
+  .auth-taskora-brand { margin-bottom:12px; }
+  .auth-taskora-brand .taskora-wordmark { font-size:1.55rem; }
+  .admin-service-form-grid { grid-template-columns:1fr; }
+  .admin-service-card { padding:13px; }
+  .admin-service-platform { width:42px; height:42px; flex-basis:42px; border-radius:13px; }
+  .admin-service-card-top { align-items:flex-start; }
+}
