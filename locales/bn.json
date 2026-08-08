@@ -18,7 +18,8 @@
     "error": "কিছু সমস্যা হয়েছে। আবার চেষ্টা করুন।",
     "language": "English",
     "admin": "অ্যাডমিন প্যানেল",
-    "reselling": "রিসেলিং"
+    "reselling": "রিসেলিং",
+    "ludo": "লুডু"
   },
   "auth": {
     "loginTitle": "লগইন করুন",
@@ -163,7 +164,8 @@
     "suspend": "সাসপেন্ড",
     "restore": "রিস্টোর",
     "services": "সার্ভিস",
-    "reselling": "রিসেলিং"
+    "reselling": "রিসেলিং",
+    "ludo": "লুডু টুর্নামেন্ট"
   },
   "reselling": {
     "title": "রিসেলিং শপ",
@@ -187,5 +189,48 @@
     "clearFilter": "ফিল্টার সরান",
     "featured": "জনপ্রিয়",
     "soldOut": "স্টক শেষ"
+  },
+  "ludo": {
+    "title": "লুডু টুর্নামেন্ট",
+    "subtitle": "লুডু খেলুন, প্রতিযোগিতা করুন এবং জিতুন",
+    "balance": "ওয়ালেট ব্যালেন্স",
+    "allMatches": "সব ম্যাচ",
+    "myMatches": "আমার ম্যাচ",
+    "history": "হিস্টোরি",
+    "playerMatch": "প্লেয়ার",
+    "entryFee": "এন্ট্রি ফি",
+    "players": "প্লেয়ার",
+    "rules": "ম্যাচের নিয়ম",
+    "prize": "পুরস্কার",
+    "join": "টুর্নামেন্টে যোগ দিন",
+    "closed": "বন্ধ",
+    "joined": "যোগ দেওয়া হয়েছে",
+    "submitProof": "উইন প্রুফ দিন",
+    "pendingReview": "রিভিউ চলছে",
+    "winner": "বিজয়ী",
+    "rejected": "প্রত্যাখ্যাত",
+    "resubmitProof": "আবার প্রুফ দিন",
+    "waitingPlayers": "প্লেয়ারের অপেক্ষায়",
+    "joinConfirm": "এই টুর্নামেন্টে যোগ দিতে ফি",
+    "joinSuccess": "টুর্নামেন্টে সফলভাবে যোগ দিয়েছেন।",
+    "noTournaments": "এখন কোনো টুর্নামেন্ট খোলা নেই",
+    "noTournamentsBody": "অ্যাডমিন নতুন লুডু ম্যাচ প্রকাশ করলে এখানে দেখা যাবে।",
+    "noMatches": "আপনার কোনো চলমান ম্যাচ নেই",
+    "noHistory": "এখনো কোনো টুর্নামেন্ট হিস্টোরি নেই",
+    "browseHint": "সব ম্যাচ থেকে একটি লুডু টুর্নামেন্টে যোগ দিন।",
+    "tournamentDetails": "টুর্নামেন্টের বিস্তারিত",
+    "description": "বর্ণনা",
+    "gotIt": "বুঝেছি, বন্ধ করুন",
+    "submitWinProof": "উইন প্রুফ জমা দিন",
+    "uploadWinningScreenshot": "জয়ের স্ক্রিনশট আপলোড করুন",
+    "username": "লুডু ইউজারনেম",
+    "usernamePlaceholder": "আপনার লুডু ইউজারনেম",
+    "uploadScreenshot": "স্ক্রিনশট আপলোড করুন",
+    "submitResult": "রেজাল্ট জমা দিন",
+    "usernameRequired": "আপনার লুডু ইউজারনেম লিখুন।",
+    "screenshotRequired": "সর্বোচ্চ 5MB-এর JPG, PNG বা WebP স্ক্রিনশট দিন।",
+    "proofAlreadySubmitted": "এই প্রুফটি ইতিমধ্যে রিভিউয়ের অপেক্ষায় আছে।",
+    "uploadFailed": "স্ক্রিনশট আপলোড করা যায়নি।",
+    "proofSubmitted": "আপনার উইন প্রুফ অ্যাডমিন রিভিউয়ের জন্য জমা হয়েছে।"
   }
 }
