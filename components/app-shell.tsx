@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell, BriefcaseBusiness, ChevronRight, CircleUserRound, Home, Languages, LayoutDashboard, LogOut,
-  Menu, MessageCircle, Network, Newspaper, Search, ShieldCheck, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound, CirclePlay,
+  Menu, Network, Newspaper, ShieldCheck, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound, CirclePlay,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
@@ -83,30 +83,21 @@ export function AppShell({ children, variant = "default" }: { children: React.Re
 
   return (
     <div className={`app-frame ${homeVariant ? "home-app-frame" : ""} ${feedVariant ? "feed-app-frame" : ""}`}>
-      <header className={`app-header ${homeVariant ? "home-app-header" : ""} ${feedVariant ? "feed-app-header" : ""}`}>
+      {!feedVariant && <header className={`app-header ${homeVariant ? "home-app-header" : ""}`}>
         <div className="header-inner">
-          {feedVariant ? <>
-            <Link href="/feed" className="feed-shell-logo">facebook</Link>
-            <div className="feed-header-icons">
-              <span className="feed-header-icon" aria-hidden="true"><Search size={22} /></span>
-              <span className="feed-header-icon" aria-hidden="true"><MessageCircle size={22} /></span>
-              <button className="feed-header-icon" onClick={() => setDrawerOpen(true)} aria-label="Open navigation"><Menu size={23} /></button>
-            </div>
-          </> : <>
-            <button className="icon-button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation"><Menu /></button>
-            <Link href="/dashboard" className={`brand ${homeVariant ? "home-brand" : ""}`} style={{ color: "inherit", textDecoration: "none" }}>
-              {!homeVariant && (general.logoUrl ? <img src={general.logoUrl} alt="" className="brand-mark" /> : <div className="brand-fallback">{general.siteName.slice(0, 1).toUpperCase()}</div>)}
-              <span className="brand-name">{homeVariant ? "WICK ZONE BD" : general.siteName}</span>
+          <button className="icon-button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation"><Menu /></button>
+          <Link href="/dashboard" className={`brand ${homeVariant ? "home-brand" : ""}`} style={{ color: "inherit", textDecoration: "none" }}>
+            {!homeVariant && (general.logoUrl ? <img src={general.logoUrl} alt="" className="brand-mark" /> : <div className="brand-fallback">{general.siteName.slice(0, 1).toUpperCase()}</div>)}
+            <span className="brand-name">{homeVariant ? "WICK ZONE BD" : general.siteName}</span>
+          </Link>
+          <div className="header-actions">
+            {!homeVariant && <button className="lang-pill" onClick={toggleLanguage} aria-label="Change language"><Languages size={17} /></button>}
+            <Link href="/notifications" className="icon-button bell" aria-label="Notifications">
+              <Bell size={23} />{unread > 0 && <span className="unread-dot" />}
             </Link>
-            <div className="header-actions">
-              {!homeVariant && <button className="lang-pill" onClick={toggleLanguage} aria-label="Change language"><Languages size={17} /></button>}
-              <Link href="/notifications" className="icon-button bell" aria-label="Notifications">
-                <Bell size={23} />{unread > 0 && <span className="unread-dot" />}
-              </Link>
-            </div>
-          </>}
+          </div>
         </div>
-      </header>
+      </header>}
 
       <nav className={`bottom-nav ${homeVariant ? "home-bottom-nav" : ""}`} aria-label="Primary navigation">
         <div className="bottom-nav-inner">
