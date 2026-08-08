@@ -1,16 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowRight, BriefcaseBusiness, Globe2, ImageIcon, Link2, LockKeyhole, Mail, MessageCircle, Play, Send } from "lucide-react";
+import { Globe2, ImageIcon, Link2, Mail, MessageCircle, Play, Send, ShieldCheck, ShoppingCart, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivationModal } from "@/components/activation-modal";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
 import { useI18n } from "@/components/i18n-provider";
-import { EmptyState, ErrorState, LoadingCards } from "@/components/ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isSafeExternalUrl } from "@/lib/url";
-import type { AnnouncementTicker, Banner, ProjectCard, ServiceLink } from "@/lib/types";
+import type { Banner, ProjectCard, ServiceLink } from "@/lib/types";
 
 const iconMap = { mail: Mail, message: MessageCircle, send: Send, link: Link2, globe: Globe2, play: Play };
 
@@ -59,11 +57,20 @@ function SocialBrandIcon({ brand }: { brand: SocialBrand }) {
   return <svg aria-hidden="true" viewBox="0 0 24 24" width="30" height="30" style={{ color: icon.color }}><path fill="currentColor" d={icon.path} /></svg>;
 }
 
+const preferredPortalBrands: SocialBrand[] = ["facebook", "telegram", "youtube", "whatsapp"];
+const portalFallbackLabels: Record<SocialBrand, string> = {
+  facebook: "Facebook Group",
+  messenger: "Messenger",
+  telegram: "Telegram Group",
+  youtube: "YouTube Channel",
+  whatsapp: "WhatsApp Group",
+  instagram: "Instagram",
+};
+
 export function DashboardClient() {
   const { t, language } = useI18n();
-  const { profile, membership } = useAuth();
+  const { membership } = useAuth();
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [tickers, setTickers] = useState<AnnouncementTicker[]>([]);
   const [links, setLinks] = useState<ServiceLink[]>([]);
   const [projects, setProjects] = useState<ProjectCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,16 +82,14 @@ export function DashboardClient() {
   const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) { setError(true); setLoading(false); return; }
-    const [bannerResult, tickerResult, linksResult, projectsResult] = await Promise.all([
+    const [bannerResult, linksResult, projectsResult] = await Promise.all([
       supabase.from("banners").select("id,title,image_url,destination_url,sort_order").eq("is_active", true).order("sort_order").limit(10),
-      supabase.from("announcement_tickers").select("id,text_en,text_bn,icon,destination_url,text_color,background_color,direction,speed_seconds,sort_order").eq("is_active", true).order("sort_order").limit(2),
       supabase.from("service_links").select("id,label_en,label_bn,icon_name,icon_url,destination_url,sort_order").eq("is_active", true).order("sort_order").limit(12),
       supabase.from("project_cards").select("id,title_en,title_bn,description_en,description_bn,image_url,icon_name,destination_url,sort_order").eq("is_active", true).order("sort_order").limit(24),
     ]);
-    const failed = [bannerResult, tickerResult, linksResult, projectsResult].some((result) => result.error);
+    const failed = [bannerResult, linksResult, projectsResult].some((result) => result.error);
     setError(failed);
     setBanners((bannerResult.data as Banner[]) ?? []);
-    setTickers((tickerResult.data as AnnouncementTicker[]) ?? []);
     setLinks((linksResult.data as ServiceLink[]) ?? []);
     setProjects((projectsResult.data as ProjectCard[]) ?? []);
     setLoading(false);
@@ -99,59 +104,82 @@ export function DashboardClient() {
 
   const activeBanner = banners[slide];
   const bannerStyle = useMemo(() => activeBanner?.image_url ? { backgroundImage: `url(${activeBanner.image_url})` } : undefined, [activeBanner]);
+  const isVerified = membership?.status === "active";
+  const portalItems = useMemo(() => {
+    const claimed = new Set<string>();
+    const preferred = preferredPortalBrands.map((brand) => {
+      const link = links.find((item) => !claimed.has(item.id) && getSocialBrand(item) === brand);
+      if (link) claimed.add(link.id);
+      return {
+        key: link?.id ?? `placeholder-${brand}`,
+        brand,
+        link,
+        label: link ? (language === "bn" && link.label_bn ? link.label_bn : link.label_en) : portalFallbackLabels[brand],
+      };
+    });
+    const extra = links.filter((item) => !claimed.has(item.id)).map((link) => ({
+      key: link.id,
+      brand: getSocialBrand(link),
+      link,
+      label: language === "bn" && link.label_bn ? link.label_bn : link.label_en,
+    }));
+    return [...preferred, ...extra];
+  }, [language, links]);
 
   return (
-    <AppShell>
-      <main className="page-shell">
-        <div className="dashboard-columns">
-          <div style={{ display: "grid", gap: 16 }}>
-            {tickers.map((ticker) => (
-              <div key={ticker.id} className="ticker" style={{ background: ticker.background_color, color: ticker.text_color }}>
-                <div className={`ticker-track ${ticker.direction}`} style={{ "--ticker-speed": `${ticker.speed_seconds}s` } as React.CSSProperties}>
-                  {language === "bn" && ticker.text_bn ? ticker.text_bn : ticker.text_en}
-                </div>
+    <AppShell variant="home">
+      <main className="home-page">
+        <div className="home-dashboard">
+          {loading ? <div className="skeleton home-banner-skeleton" /> : (
+            <div className="home-banner-carousel" onTouchStart={(event) => touchStart.current = event.touches[0]?.clientX ?? null} onTouchEnd={(event) => {
+              if (touchStart.current == null || !banners.length) return;
+              const delta = (event.changedTouches[0]?.clientX ?? touchStart.current) - touchStart.current;
+              if (Math.abs(delta) > 45) setSlide((value) => (value + (delta < 0 ? 1 : banners.length - 1)) % banners.length);
+              touchStart.current = null;
+            }}>
+              <div className={`home-banner ${activeBanner?.image_url ? "has-image" : ""}`} style={bannerStyle}>
+                {activeBanner?.image_url ? activeBanner.title && <span className="home-banner-image-title">{activeBanner.title}</span> : <>
+                  <div className="home-banner-copy"><span className="home-banner-badge">NUMBER ONE</span><h1>{activeBanner?.title || "BANGLADESH TRUSTED ORGANIZATION"}</h1><strong>WICK ZONE BD</strong></div>
+                  <div className="home-banner-art"><ShoppingCart size={50} /></div>
+                </>}
               </div>
-            ))}
+              {banners.length > 1 && <div className="home-banner-dots">{banners.map((banner, index) => <button key={banner.id} className={`home-banner-dot ${index === slide ? "active" : ""}`} onClick={() => setSlide(index)} aria-label={`Banner ${index + 1}`} />)}</div>}
+            </div>
+          )}
 
-            {loading ? <div className="skeleton" style={{ height: 190 }} /> : error ? <ErrorState message={t("common.error")} /> : banners.length ? (
-              <div className="hero-carousel" onTouchStart={(event) => touchStart.current = event.touches[0]?.clientX ?? null} onTouchEnd={(event) => {
-                if (touchStart.current == null || !banners.length) return;
-                const delta = (event.changedTouches[0]?.clientX ?? touchStart.current) - touchStart.current;
-                if (Math.abs(delta) > 45) setSlide((value) => (value + (delta < 0 ? 1 : banners.length - 1)) % banners.length);
-                touchStart.current = null;
-              }}>
-                <div className="hero-slide" style={bannerStyle}>
-                  <div className="hero-slide-content">
-                    <span className="status" style={{ background: "rgba(255,255,255,.16)", color: "white" }}>Community</span>
-                    <h1 style={{ maxWidth: 430, fontSize: "clamp(1.65rem,7vw,2.65rem)", lineHeight: 1.08, margin: "10px 0 0" }}>{activeBanner.title || t("dashboard.hello")}</h1>
-                  </div>
-                </div>
-                <div className="hero-dots">{banners.map((banner, index) => <button key={banner.id} className={`hero-dot ${index === slide ? "active" : ""}`} onClick={() => setSlide(index)} aria-label={`Banner ${index + 1}`} />)}</div>
-              </div>
-            ) : <div className="hero-carousel"><div className="hero-slide"><div className="hero-slide-content"><span className="muted" style={{ color: "#ccd4e0" }}>{t("dashboard.hello")}</span><h1 style={{ margin: "8px 0 0" }}>{profile?.full_name}</h1></div></div></div>}
+          {error && !loading && <div className="form-message error">{t("common.error")}</div>}
 
-            {membership?.status !== "active" && (
-              <section className="activation-card">
-                <div className="activation-row"><div className="activation-icon"><LockKeyhole /></div><div><h2 className="section-title" style={{ fontSize: "1.22rem" }}>{t("dashboard.lockedTitle")}</h2><p className="muted" style={{ margin: "5px 0 13px", lineHeight: 1.6 }}>{t("dashboard.lockedBody")}</p><button className="primary-button" onClick={() => setActivationOpen(true)}>{t("dashboard.activate")}<ArrowRight size={18} /></button></div></div>
-              </section>
-            )}
+          <section className={`home-verification ${isVerified ? "verified" : ""}`}>
+            <div className="home-verification-row">
+              <div className="home-verification-icon"><ShieldCheck size={23} /></div>
+              <strong>{language === "bn" ? (isVerified ? "আপনার অ্যাকাউন্ট ভেরিফাইড" : "আপনার অ্যাকাউন্ট এখনো ভেরিফাইড নয়") : (isVerified ? "Your account is verified" : "Your account is not verified yet")}</strong>
+              <span className="home-verification-status"><span />{isVerified ? "Verified" : "Verification Required"}</span>
+            </div>
+            {!isVerified && <button className="home-verify-button" onClick={() => setActivationOpen(true)}>{language === "bn" ? "আপনার অ্যাকাউন্ট এখনই ভেরিফাই করে নিন" : "Verify your account now"}</button>}
+          </section>
 
-            <section>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}><div className="quick-icon" style={{ width: 42, height: 42 }}><Link2 size={20} /></div><h2 className="section-title">{t("dashboard.portal")}</h2></div>
-              {loading ? <LoadingCards count={2} /> : links.length ? <div className="quick-grid">{links.map((link) => {
-                const Icon = iconMap[(link.icon_name ?? "globe").toLowerCase() as keyof typeof iconMap] ?? Globe2;
-                const brand = getSocialBrand(link);
-                return <a key={link.id} className="quick-card" href={isSafeExternalUrl(link.destination_url) ? link.destination_url : "#"} target="_blank" rel="noreferrer"><div className="quick-icon">{link.icon_url ? <img src={link.icon_url} alt="" style={{ width: 30, height: 30, objectFit: "contain" }} /> : brand ? <SocialBrandIcon brand={brand} /> : <Icon size={28} />}</div><strong>{language === "bn" && link.label_bn ? link.label_bn : link.label_en}</strong></a>;
-              })}</div> : <EmptyState message={t("dashboard.noLinks")} />}
-            </section>
-          </div>
+          <section className="home-section">
+            <div className="home-section-head"><div className="home-section-title"><span className="home-section-icon"><Link2 size={20} /></span><h2>{language === "bn" ? "অফিসিয়াল এক্সপ্রেস পোর্টাল" : "Official access portal"}</h2></div><div className="home-live"><span />Live</div></div>
+            <div className="home-social-grid">{portalItems.map((item) => {
+              const link = item.link;
+              const Icon = iconMap[(link?.icon_name ?? "globe").toLowerCase() as keyof typeof iconMap] ?? Globe2;
+              const content = <><div className="home-social-icon">{link?.icon_url ? <img src={link.icon_url} alt="" /> : item.brand ? <SocialBrandIcon brand={item.brand} /> : <Icon size={27} />}</div><strong>{item.label}</strong></>;
+              return link && isSafeExternalUrl(link.destination_url)
+                ? <a key={item.key} className="home-social-card" href={link.destination_url} target="_blank" rel="noreferrer">{content}</a>
+                : <div key={item.key} className="home-social-card is-placeholder" aria-disabled="true">{content}</div>;
+            })}</div>
+          </section>
 
-          <aside style={{ display: "grid", gap: 16 }}>
-            <section><div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}><div className="quick-icon" style={{ width: 42, height: 42 }}><BriefcaseBusiness size={20} /></div><h2 className="section-title">{t("dashboard.services")}</h2></div>
-              {loading ? <LoadingCards count={3} /> : projects.length ? <div className="quick-grid">{projects.map((project) => <a key={project.id} className="quick-card" href={project.destination_url && isSafeExternalUrl(project.destination_url) ? project.destination_url : "#"} target={project.destination_url ? "_blank" : undefined} rel="noreferrer"><div className="quick-icon">{project.image_url ? <img src={project.image_url} alt="" style={{ width: 38, height: 38, objectFit: "cover", borderRadius: 10 }} /> : <ImageIcon size={26} />}</div><strong>{language === "bn" && project.title_bn ? project.title_bn : project.title_en}</strong></a>)}</div> : <EmptyState message={t("dashboard.noProjects")} />}
-            </section>
-            <Link href="/network" className="network-hero" style={{ textDecoration: "none" }}><span className="status" style={{ color: "white", background: "rgba(255,255,255,.12)" }}>Network</span><h2 style={{ margin: "12px 0 8px", fontSize: "1.6rem" }}>{t("network.title")}</h2><p style={{ margin: 0, color: "#cbd2df", lineHeight: 1.6 }}>{t("network.body")}</p></Link>
-          </aside>
+          <section className="home-section">
+            <div className="home-section-head"><div className="home-section-title"><span className="home-section-icon"><Zap size={20} /></span><h2>{language === "bn" ? "আমাদের প্রজেক্ট সমূহ" : "Our projects"}</h2></div><div className="home-project-live"><span />Project Links</div></div>
+            {loading ? <div className="home-project-grid">{[0,1,2].map((item) => <div key={item} className="skeleton home-project-skeleton" />)}</div> : projects.length ? <div className="home-project-grid">{projects.map((project) => {
+              const ProjectIcon = iconMap[(project.icon_name ?? "").toLowerCase() as keyof typeof iconMap] ?? ImageIcon;
+              const content = <><div className="home-project-icon">{project.image_url ? <img src={project.image_url} alt="" /> : <ProjectIcon size={25} />}</div><strong>{language === "bn" && project.title_bn ? project.title_bn : project.title_en}</strong></>;
+              return project.destination_url && isSafeExternalUrl(project.destination_url)
+                ? <a key={project.id} className="home-project-card" href={project.destination_url} target="_blank" rel="noreferrer">{content}</a>
+                : <div key={project.id} className="home-project-card">{content}</div>;
+            })}</div> : <div className="home-empty">{t("dashboard.noProjects")}</div>}
+          </section>
         </div>
       </main>
       <ActivationModal open={activationOpen} onClose={() => setActivationOpen(false)} />
