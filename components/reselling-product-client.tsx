@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Boxes, CheckCircle2, FileText, Layers3, LifeBuoy, PackageCheck, PackageOpen, ShieldCheck, ShoppingBag, Store, Tag } from "lucide-react";
+import { ArrowLeft, BadgePercent, CheckCircle2, FileText, Heart, Layers3, PackageCheck, PackageOpen, ShieldCheck, ShoppingBag, Store } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { useAuth } from "@/components/auth-provider";
 import { useI18n } from "@/components/i18n-provider";
 import { useSiteConfig } from "@/components/site-config-provider";
 import { formatMoney } from "@/lib/money";
@@ -30,11 +31,15 @@ interface ProductVendor { id: string; name: string; description: string | null; 
 
 export function ResellingProductClient() {
   const params = useParams<{ id: string }>();
+  const { user } = useAuth();
   const { language } = useI18n();
   const { general } = useSiteConfig();
+  const userId = user?.id ?? null;
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [category, setCategory] = useState<ProductCategory | null>(null);
   const [vendor, setVendor] = useState<ProductVendor | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [savingFavorite, setSavingFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [buying, setBuying] = useState(false);
@@ -59,10 +64,30 @@ export function ResellingProductClient() {
     ]);
     setCategory((categoryResult.data as ProductCategory | null) ?? null);
     setVendor((vendorResult.data as ProductVendor | null) ?? null);
+    if (userId) {
+      const favoriteResult = await supabase.from("reselling_favorites").select("product_id").eq("user_id", userId).eq("product_id", id).maybeSingle();
+      setSaved(Boolean(favoriteResult.data));
+    } else {
+      setSaved(false);
+    }
     setLoading(false);
-  }, [params?.id]);
+  }, [params?.id, userId]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const toggleFavorite = async () => {
+    if (!product || !userId || savingFavorite) return;
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    const wasSaved = saved;
+    setSavingFavorite(true);
+    setSaved(!wasSaved);
+    const { error: favoriteError } = wasSaved
+      ? await supabase.from("reselling_favorites").delete().eq("user_id", userId).eq("product_id", product.id)
+      : await supabase.from("reselling_favorites").insert({ user_id: userId, product_id: product.id });
+    if (favoriteError) setSaved(wasSaved);
+    setSavingFavorite(false);
+  };
 
   const buy = async () => {
     if (!product || product.stock_count === 0 || buying) return;
@@ -101,28 +126,42 @@ export function ResellingProductClient() {
   const currentPrice = Number(product?.price ?? 0);
   const comparePrice = product?.compare_at_price == null ? null : Number(product.compare_at_price);
   const discount = comparePrice && comparePrice > currentPrice ? Math.round((1 - currentPrice / comparePrice) * 100) : 0;
+  const productName = product ? localize(product.name_en, product.name_bn) : "";
+  const categoryName = category ? localize(category.name_en, category.name_bn) : (language === "bn" ? "সাধারণ" : "General");
+  const vendorName = vendor?.name || general.siteName;
+  const stockValue = product?.stock_count == null ? (language === "bn" ? "উপলভ্য" : "Available") : product.stock_count.toLocaleString(language === "bn" ? "bn-BD" : "en");
 
   return <AppShell variant="hub"><main className="reselling-detail-page"><div className="reselling-detail-container">
-    <Link href="/reselling" className="reselling-detail-back"><ArrowLeft size={18} />{language === "bn" ? "রিসেলিং-এ ফিরুন" : "Back to Reselling"}</Link>
-
     {loading ? <div className="reselling-detail-skeleton"><div className="skeleton" /><div className="skeleton" /></div> : error || !product ? <section className="reselling-empty-panel reselling-detail-error"><PackageOpen size={38} /><h2>{language === "bn" ? "প্রোডাক্ট পাওয়া যায়নি" : "Product not found"}</h2><p>{language === "bn" ? "প্রোডাক্টটি সরানো হয়েছে অথবা এখন আর বিক্রির জন্য নেই।" : "This product was removed or is no longer available."}</p></section> : <>
       <section className="reselling-detail-card">
-        <div className="reselling-detail-media">{product.image_url ? <img src={product.image_url} alt={localize(product.name_en, product.name_bn)} /> : <PackageOpen size={72} />}<div className="reselling-detail-media-badges">{product.is_featured && <span>{language === "bn" ? "জনপ্রিয়" : "Featured"}</span>}{discount > 0 && <b>-{discount}%</b>}</div></div>
+        <div className="reselling-detail-media">
+          {product.image_url ? <img src={product.image_url} alt={productName} /> : <PackageOpen size={72} />}
+          <div className="reselling-detail-media-actions">
+            <Link href="/reselling" aria-label={language === "bn" ? "রিসেলিং-এ ফিরুন" : "Back to Reselling"}><ArrowLeft size={19} /></Link>
+            <button type="button" className={saved ? "saved" : ""} disabled={savingFavorite} aria-label={saved ? (language === "bn" ? "সেভ থেকে সরান" : "Remove from saved") : (language === "bn" ? "সেভ করুন" : "Save product")} aria-pressed={saved} onClick={() => void toggleFavorite()}><Heart size={19} fill={saved ? "currentColor" : "none"} /></button>
+          </div>
+          <div className="reselling-detail-media-badges">{product.is_featured && <span>{language === "bn" ? "জনপ্রিয়" : "Featured"}</span>}{discount > 0 && <b>-{discount}%</b>}</div>
+        </div>
         <div className="reselling-detail-main">
-          <div className="reselling-detail-eyebrow"><Boxes size={16} />{general.siteName} · {language === "bn" ? "রিসেলিং স্টোর" : "Reselling Store"}</div>
+          <div className="reselling-detail-eyebrow">{vendorName}</div>
           <div className="reselling-detail-code">{language === "bn" ? "প্রোডাক্ট আইডি" : "Product ID"} · {product.id.slice(0, 8).toUpperCase()}</div>
-          <h1>{localize(product.name_en, product.name_bn)}</h1>
-          <div className="reselling-detail-tags">{category && <span><Layers3 size={14} />{localize(category.name_en, category.name_bn)}</span>}{vendor && <span><Store size={14} />{vendor.name}</span>}</div>
+          <h1>{productName}</h1>
+          <p className="reselling-detail-lead">{categoryName}{vendor ? ` · ${vendor.name}` : ""}</p>
           <div className="reselling-detail-price"><strong>{formatMoney(currentPrice, general.currency, language)}</strong>{comparePrice && comparePrice > currentPrice && <del>{formatMoney(comparePrice, general.currency, language)}</del>}{discount > 0 && <span>{language === "bn" ? `${discount}% সাশ্রয়` : `Save ${discount}%`}</span>}</div>
           <div className={`reselling-detail-stock ${product.stock_count === 0 ? "sold-out" : ""}`}><CheckCircle2 size={16} />{product.stock_count === 0 ? (language === "bn" ? "স্টক শেষ" : "Sold out") : product.stock_count == null ? (language === "bn" ? "স্টকে আছে" : "Available") : (language === "bn" ? `${product.stock_count}টি স্টকে আছে` : `${product.stock_count} in stock`)}</div>
-          <div className="reselling-detail-highlights"><div><PackageCheck size={18} /><span><strong>{language === "bn" ? "লাইভ স্টক" : "Live stock"}</strong><small>{language === "bn" ? "অ্যাডমিন পরিচালিত" : "Admin managed"}</small></span></div><div><Tag size={18} /><span><strong>{language === "bn" ? "বর্তমান মূল্য" : "Current price"}</strong><small>{language === "bn" ? "লিস্টিং অনুযায়ী" : "As listed"}</small></span></div><div><LifeBuoy size={18} /><span><strong>{language === "bn" ? "সাপোর্ট" : "Support"}</strong><small>{language === "bn" ? "অর্ডারের পর যোগাযোগ" : "After-order contact"}</small></span></div></div>
+          <div className="reselling-detail-specs">
+            <div><span><Layers3 size={17} /></span><div><small>{language === "bn" ? "ক্যাটাগরি" : "Category"}</small><strong>{categoryName}</strong></div></div>
+            <div><span><Store size={17} /></span><div><small>{language === "bn" ? "ভেন্ডর" : "Vendor"}</small><strong>{vendorName}</strong></div></div>
+            <div><span><PackageCheck size={17} /></span><div><small>{language === "bn" ? "স্টক" : "Stock"}</small><strong>{stockValue}</strong></div></div>
+            <div><span><BadgePercent size={17} /></span><div><small>{language === "bn" ? "অফার" : "Offer"}</small><strong>{discount > 0 ? (language === "bn" ? `${discount}% ছাড়` : `${discount}% off`) : (language === "bn" ? "বর্তমান মূল্য" : "Current price")}</strong></div></div>
+          </div>
           <button type="button" className="reselling-buy-button" disabled={product.stock_count === 0 || buying} onClick={() => void buy()}><ShoppingBag size={20} />{buying ? (language === "bn" ? "পেমেন্ট প্রস্তুত হচ্ছে…" : "Preparing payment…") : (language === "bn" ? "এখনই কিনুন" : "Buy Now")}</button>
           {buyMessage && <div className="reselling-payment-message"><ShieldCheck size={17} /><span>{buyMessage}</span></div>}
           <p className="reselling-payment-note"><ShieldCheck size={15} />{language === "bn" ? "পেমেন্ট গেটওয়ে চালু হলে Buy Now থেকে সরাসরি নিরাপদ পেমেন্ট হবে। সফল পেমেন্টের পর ডেলিভারির জন্য অ্যাডমিন/সাপোর্টের সাথে যোগাযোগ করা যাবে।" : "When the payment gateway is enabled, Buy Now will open secure direct payment. After a successful payment, contact admin/support for delivery."}</p>
         </div>
       </section>
 
-      <section className="reselling-detail-description"><div className="reselling-detail-section-title"><span><FileText size={20} /></span><div><small>{language === "bn" ? "জেনে নিন" : "GOOD TO KNOW"}</small><h2>{language === "bn" ? "প্রোডাক্টের বিস্তারিত" : "Product details"}</h2></div></div><p>{localize(product.description_en, product.description_bn) || (language === "bn" ? "এই প্রোডাক্টের বিস্তারিত এখনো যোগ করা হয়নি। কেনার আগে প্রয়োজন হলে সাপোর্টে যোগাযোগ করুন।" : "No product description has been added yet. Contact support before buying if you need more information.")}</p><div className="reselling-detail-facts"><div><span>{language === "bn" ? "ক্যাটাগরি" : "Category"}</span><strong>{category ? localize(category.name_en, category.name_bn) : (language === "bn" ? "সাধারণ" : "General")}</strong></div><div><span>{language === "bn" ? "ভেন্ডর" : "Vendor"}</span><strong>{vendor?.name || general.siteName}</strong></div><div><span>{language === "bn" ? "স্টক" : "Stock"}</span><strong>{product.stock_count == null ? (language === "bn" ? "উপলভ্য" : "Available") : String(product.stock_count)}</strong></div></div></section>
+      <section className="reselling-detail-description"><div className="reselling-detail-section-title"><span><FileText size={20} /></span><div><small>{language === "bn" ? "জেনে নিন" : "GOOD TO KNOW"}</small><h2>{language === "bn" ? "প্রোডাক্টের বিস্তারিত" : "Product details"}</h2></div></div><p>{localize(product.description_en, product.description_bn) || (language === "bn" ? "এই প্রোডাক্টের বিস্তারিত এখনো যোগ করা হয়নি। কেনার আগে প্রয়োজন হলে সাপোর্টে যোগাযোগ করুন।" : "No product description has been added yet. Contact support before buying if you need more information.")}</p><div className="reselling-detail-facts"><div><span>{language === "bn" ? "ক্যাটাগরি" : "Category"}</span><strong>{categoryName}</strong></div><div><span>{language === "bn" ? "ভেন্ডর" : "Vendor"}</span><strong>{vendorName}</strong></div><div><span>{language === "bn" ? "স্টক" : "Stock"}</span><strong>{stockValue}</strong></div></div></section>
       {vendor && <section className="reselling-detail-vendor">{vendor.logo_url ? <img src={vendor.logo_url} alt="" /> : <span><Store size={25} /></span>}<div><small>{language === "bn" ? "ভেন্ডর" : "Vendor"}</small><strong>{vendor.name}</strong>{vendor.description && <p>{vendor.description}</p>}</div></section>}
     </>}
   </div></main></AppShell>;

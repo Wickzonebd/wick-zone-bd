@@ -2040,3 +2040,205 @@ img { max-width: 100%; }
   .wallet-lifetime-grid strong { font-size:.82rem; }
   .wallet-monthly-head { align-items:flex-start; flex-direction:column; }
 }
+
+/* Minimal premium Reselling product detail, based on the original monochrome product UI. */
+.reselling-detail-page {
+  min-height:100dvh;
+  padding:14px 10px calc(126px + env(safe-area-inset-bottom));
+  color:#1d2224;
+  background:linear-gradient(180deg,#f4f5f3 0,#eeefed 100%);
+}
+.reselling-detail-container { width:min(100%,940px); margin:0 auto; gap:14px; }
+.reselling-detail-card {
+  overflow:hidden;
+  border:1px solid rgba(25,31,33,.08);
+  border-radius:30px;
+  background:#fff;
+  box-shadow:0 20px 54px rgba(30,38,40,.09);
+}
+.reselling-detail-media {
+  position:relative;
+  min-height:360px;
+  aspect-ratio:1/1.03;
+  padding:38px 26px 30px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  color:#9ca3a1;
+  background:radial-gradient(circle at 50% 42%,#fafaf9 0,#f3f4f2 55%,#eceeeb 100%);
+}
+.reselling-detail-media::after {
+  content:"";
+  position:absolute;
+  inset:auto 15% 7% 15%;
+  height:25px;
+  border-radius:50%;
+  background:rgba(28,33,34,.08);
+  filter:blur(17px);
+  pointer-events:none;
+}
+.reselling-detail-media > img {
+  position:relative;
+  z-index:1;
+  width:100%;
+  height:100%;
+  max-height:430px;
+  object-fit:contain;
+  filter:drop-shadow(0 18px 20px rgba(22,28,29,.1));
+}
+.reselling-detail-media-actions {
+  position:absolute;
+  z-index:4;
+  top:14px;
+  left:14px;
+  right:14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  pointer-events:none;
+}
+.reselling-detail-media-actions > a,
+.reselling-detail-media-actions > button {
+  width:42px;
+  height:42px;
+  border:1px solid rgba(34,39,40,.07);
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  color:#262b2c;
+  background:rgba(255,255,255,.91);
+  box-shadow:0 7px 20px rgba(32,39,40,.08);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+  cursor:pointer;
+  pointer-events:auto;
+}
+.reselling-detail-media-actions > a { text-decoration:none; }
+.reselling-detail-media-actions > button.saved { color:#fff; background:#232728; }
+.reselling-detail-media-actions > button:disabled { opacity:.55; cursor:wait; }
+.reselling-detail-media-badges {
+  position:absolute;
+  z-index:3;
+  left:15px;
+  top:auto;
+  bottom:14px;
+  display:flex;
+  gap:6px;
+}
+.reselling-detail-media-badges span,
+.reselling-detail-media-badges b {
+  padding:6px 9px;
+  border:1px solid rgba(255,255,255,.7);
+  border-radius:999px;
+  font-size:8px;
+  font-weight:850;
+  box-shadow:none;
+}
+.reselling-detail-media-badges span { color:#343a3b; background:rgba(255,255,255,.9); }
+.reselling-detail-media-badges b { color:#fff; background:#24292a; }
+.reselling-detail-main { padding:24px 20px 22px; display:grid; gap:11px; align-content:center; }
+.reselling-detail-eyebrow {
+  color:#7d8583;
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+}
+.reselling-detail-code { color:#a0a6a5; font-size:8px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+.reselling-detail-main h1 { margin:1px 0 0; color:#1b2021; font-size:clamp(28px,7vw,40px); line-height:1.05; letter-spacing:-.045em; }
+.reselling-detail-lead { margin:-3px 0 2px; color:#828987; font-size:11px; line-height:1.45; }
+.reselling-detail-price { display:flex; align-items:baseline; flex-wrap:wrap; gap:9px; margin-top:3px; }
+.reselling-detail-price strong { color:#1c2122; font-size:26px; line-height:1; letter-spacing:-.035em; }
+.reselling-detail-price del { color:#a6acab; font-size:12px; }
+.reselling-detail-price > span { padding:4px 7px; border-radius:999px; color:#146c52; background:#e8f7f0; font-size:8px; font-weight:850; }
+.reselling-detail-stock {
+  width:max-content;
+  max-width:100%;
+  min-height:29px;
+  padding:0 9px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  color:#236b58;
+  background:#edf7f3;
+  font-size:9px;
+  font-weight:800;
+}
+.reselling-detail-stock.sold-out { color:#a63d48; background:#fbecee; }
+.reselling-detail-specs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px 10px; margin:5px 0 2px; }
+.reselling-detail-specs > div { min-width:0; padding:8px 0; display:grid; grid-template-columns:31px minmax(0,1fr); gap:7px; align-items:center; }
+.reselling-detail-specs > div > span { width:31px; height:31px; display:grid; place-items:center; border-radius:10px; color:#555d5b; background:#f1f2f0; }
+.reselling-detail-specs > div > div { min-width:0; }
+.reselling-detail-specs small,.reselling-detail-specs strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.reselling-detail-specs small { color:#a0a6a4; font-size:7px; font-weight:750; text-transform:uppercase; }
+.reselling-detail-specs strong { margin-top:2px; color:#39403f; font-size:9px; }
+.reselling-buy-button {
+  width:100%;
+  min-height:56px;
+  margin-top:2px;
+  border:0;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  color:#fff;
+  background:#222627;
+  box-shadow:0 12px 28px rgba(20,25,26,.17);
+  font:inherit;
+  font-size:13px;
+  font-weight:850;
+  cursor:pointer;
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.reselling-buy-button:hover:not(:disabled) { transform:translateY(-1px); background:#111415; box-shadow:0 15px 31px rgba(20,25,26,.2); }
+.reselling-buy-button:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; }
+.reselling-payment-message { border-color:#e3e6e3; color:#535d5b; background:#f6f7f5; }
+.reselling-payment-note { color:#929997; font-size:8.5px; line-height:1.55; }
+.reselling-detail-description {
+  padding:20px;
+  border:1px solid rgba(25,31,33,.08);
+  border-radius:28px;
+  background:#fff;
+  box-shadow:0 11px 30px rgba(30,38,40,.055);
+}
+.reselling-detail-section-title { margin-bottom:14px; gap:10px; }
+.reselling-detail-section-title > span { width:42px; height:42px; border-radius:13px; color:#363d3c; background:#f0f1ef; }
+.reselling-detail-section-title small { color:#979e9c; font-size:7px; letter-spacing:.14em; }
+.reselling-detail-section-title h2 { color:#252b2c; font-size:18px; }
+.reselling-detail-description > p { padding:15px; border:0; border-radius:15px; color:#626b69; background:#f6f7f5; font-size:11px; line-height:1.75; }
+.reselling-detail-facts { grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin-top:11px; }
+.reselling-detail-facts > div { padding:10px; border-color:#e9ebe8; border-radius:12px; background:#fff; }
+.reselling-detail-facts span { color:#a1a7a5; }
+.reselling-detail-facts strong { color:#3c4442; }
+.reselling-detail-vendor {
+  padding:16px;
+  border:1px solid rgba(25,31,33,.08);
+  border-radius:25px;
+  background:#fff;
+  box-shadow:0 9px 25px rgba(30,38,40,.045);
+}
+.reselling-detail-vendor > img,.reselling-detail-vendor > span { color:#4b5452; background:#f0f1ef; }
+.reselling-detail-skeleton > div:first-child { min-height:520px; border-radius:30px; }
+.reselling-detail-skeleton > div:last-child { min-height:220px; border-radius:28px; }
+
+@media (min-width:620px) {
+  .reselling-detail-page { padding:24px 16px calc(116px + env(safe-area-inset-bottom)); }
+  .reselling-detail-card { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(340px,.95fr); }
+  .reselling-detail-media { min-height:560px; aspect-ratio:auto; padding:56px 38px 40px; }
+  .reselling-detail-main { padding:38px 32px; }
+}
+
+@media (max-width:420px) {
+  .reselling-detail-page { padding-inline:8px; }
+  .reselling-detail-card { border-radius:26px; }
+  .reselling-detail-media { min-height:330px; padding:34px 20px 28px; }
+  .reselling-detail-main { padding:21px 17px 19px; }
+  .reselling-detail-main h1 { font-size:27px; }
+  .reselling-detail-specs { gap:3px 7px; }
+  .reselling-detail-specs > div { grid-template-columns:29px minmax(0,1fr); gap:6px; }
+  .reselling-detail-specs > div > span { width:29px; height:29px; border-radius:9px; }
+  .reselling-detail-description { padding:17px; border-radius:25px; }
+  .reselling-detail-facts { grid-template-columns:1fr 1fr; }
+}
