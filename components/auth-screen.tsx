@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Languages, LockKeyhole, Mail, Phone, UserRound, UsersRound } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { useI18n } from "@/components/i18n-provider";
-import { useSiteConfig } from "@/components/site-config-provider";
+import { TaskoraLockup } from "@/components/taskora-brand";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { normalizeBangladeshPhone } from "@/lib/url";
 
@@ -14,7 +14,6 @@ type Mode = "login" | "register" | "forgot" | "reset";
 export function AuthScreen({ mode }: { mode: Mode }) {
   const router = useRouter();
   const { t, toggleLanguage } = useI18n();
-  const { general } = useSiteConfig();
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -94,7 +93,7 @@ export function AuthScreen({ mode }: { mode: Mode }) {
     <main className={`auth-page auth-page-${mode}`}>
       <section className="auth-card">
         <div style={{ display: "flex", justifyContent: "flex-end" }}><button className="secondary-button" style={{ minHeight: 42 }} onClick={toggleLanguage}><Languages size={17} />{t("common.language")}</button></div>
-        {general.logoUrl ? <img className="auth-logo" src={general.logoUrl} alt="" /> : <div className="auth-logo"><LockKeyhole size={34} /></div>}
+        <TaskoraLockup markSize={58} className="auth-taskora-brand" />
         <h1 className="auth-title">{title}</h1>
         <p className="auth-subtitle">{subtitle}</p>
         <form className="auth-form" onSubmit={submit}>
