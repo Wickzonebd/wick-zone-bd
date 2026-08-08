@@ -36,7 +36,7 @@ const tabs: Array<{ id: AdminTab; key: string; icon: typeof LayoutDashboard }> =
 ];
 
 const ADMIN_USERNAME = "admin";
-const ADMIN_AUTH_EMAIL = "fahimprivateuser@gmail.com";
+const ADMIN_AUTH_EMAIL = "admin@wickzone.invalid";
 const ADMIN_LOGIN_ERROR = "Incorrect administrator credentials.";
 const EMPTY_JOB_DRAFT = { code: "", titleEn: "", titleBn: "", shortEn: "", shortBn: "", instructionsEn: "", instructionsBn: "", category: "General", targetUrl: "", thumbnailUrl: "", instructionImageUrl: "", reward: "", maxSlots: "100", deadline: "", sortOrder: "0", allowResubmission: true, proofText: true, proofUrl: false, proofImages: true };
 
