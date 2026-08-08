@@ -373,22 +373,7 @@ img { max-width: 100%; }
 
 /* Facebook-style community feed. Scoped to the Feed route so the rest of the app is unchanged. */
 .feed-app-frame { min-height: 100dvh; background: #f0f2f5; color: #050505; }
-.feed-app-header { color: #050505; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
-.feed-app-header .header-inner {
-  width: min(100%, 680px);
-  min-height: 60px;
-  padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.feed-shell-logo { color: #1877f2; text-decoration: none; font-size: 28px; line-height: 1; font-weight: 850; letter-spacing: -.03em; }
-.feed-header-icons { display: flex; align-items: center; gap: 8px; color: #65676b; }
-.feed-header-icon { width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; color: inherit; background: transparent; }
-button.feed-header-icon:hover { background: #f0f2f5; }
-
-.facebook-feed-main { min-height: calc(100dvh - 60px); background: #f0f2f5; }
+.facebook-feed-main { min-height: 100dvh; background: #f0f2f5; }
 .facebook-feed-container { width: min(100%,680px); margin: 0 auto; padding: 16px 12px 40px; }
 
 .facebook-create-post { padding: 16px; margin-bottom: 16px; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.1); }
@@ -456,5 +441,5 @@ button.feed-header-icon:hover { background: #f0f2f5; }
 }
 
 @media (min-width: 860px) {
-  .feed-app-frame .bottom-nav { top: 60px; }
+  .feed-app-frame .bottom-nav { top: 0; }
 }
