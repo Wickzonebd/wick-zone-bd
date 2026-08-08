@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, BadgeCheck, BriefcaseBusiness, Check, CircleDollarSign, FileCheck2, ImagePlus, LayoutDashboard, LockKeyhole, Newspaper, Palette, Plus, RefreshCw, Search, Settings, ShieldCheck, Sparkles, Trash2, UploadCloud, UserRound, UsersRound, WalletCards, X } from "lucide-react";
+import { Activity, BadgeCheck, BriefcaseBusiness, Check, CircleDollarSign, FileCheck2, ImagePlus, LayoutDashboard, LockKeyhole, Megaphone, Newspaper, Palette, Plus, RefreshCw, Search, Settings, ShieldCheck, Sparkles, Trash2, UploadCloud, UserRound, UsersRound, WalletCards, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { AdminContentManager } from "@/components/admin-content-manager";
 import { AppShell } from "@/components/app-shell";
