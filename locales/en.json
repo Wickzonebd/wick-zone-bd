@@ -1,7 +1,7 @@
 {
   "common": {
     "home": "Home",
-    "feed": "Feed",
+    "feed": "Social",
     "jobs": "Micro Jobs",
     "wallet": "Wallet",
     "profile": "Profile",
@@ -78,7 +78,7 @@
     "resubmit": "Resubmission requested"
   },
   "feed": {
-    "title": "Community Feed",
+    "title": "Taskora Social",
     "composer": "What's on your mind?",
     "publish": "Post",
     "empty": "No posts yet.",
@@ -147,7 +147,7 @@
     "jobs": "Micro Jobs",
     "proofs": "Proof Review",
     "withdrawals": "Withdrawals",
-    "posts": "Feed Moderation",
+    "posts": "Social Moderation",
     "reports": "Comments & Reports",
     "content": "Site Content",
     "settings": "Branding & Settings",
