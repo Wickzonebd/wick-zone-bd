@@ -139,7 +139,7 @@ export function DashboardClient() {
             }}>
               <div className={`home-banner ${activeBanner?.image_url ? "has-image" : ""}`} style={bannerStyle}>
                 {activeBanner?.image_url ? activeBanner.title && <span className="home-banner-image-title">{activeBanner.title}</span> : <>
-                  <div className="home-banner-copy"><span className="home-banner-badge">NUMBER ONE</span><h1>{activeBanner?.title || "BANGLADESH TRUSTED ORGANIZATION"}</h1><strong>WICK ZONE BD</strong></div>
+                  <div className="home-banner-copy"><span className="home-banner-badge">NUMBER ONE</span><h1>{activeBanner?.title || "BANGLADESH TRUSTED ORGANIZATION"}</h1><strong>Taskora</strong></div>
                   <div className="home-banner-art"><ShoppingCart size={50} /></div>
                 </>}
               </div>
