@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell, BriefcaseBusiness, ChevronRight, CircleUserRound, Home, Languages, LayoutDashboard, LogOut,
-  Menu, Network, Newspaper, ShieldCheck, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound,
+  Menu, Network, Newspaper, ShieldCheck, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound, CirclePlay,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
@@ -21,6 +21,14 @@ const mainNav = [
   { href: "/profile", label: "common.profile", icon: CircleUserRound },
 ];
 
+const homeNav = [
+  { href: "/dashboard", bn: "হোম", en: "Home", icon: Home },
+  { href: "/wallet", bn: "ওয়ালেট", en: "Wallet", icon: WalletCards },
+  { href: "/jobs", bn: "কোর্স", en: "Course", icon: CirclePlay },
+  { href: "/network", bn: "নেটওয়ার্ক", en: "Network", icon: Network },
+  { href: "/profile", bn: "প্রোফাইল", en: "Profile", icon: CircleUserRound },
+];
+
 const drawerNav = [
   { href: "/dashboard", label: "common.home", icon: LayoutDashboard },
   { href: "/feed", label: "common.feed", icon: Newspaper },
@@ -31,10 +39,10 @@ const drawerNav = [
   { href: "/profile", label: "profile.update", icon: UserRoundCog },
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, variant = "default" }: { children: React.ReactNode; variant?: "default" | "home" }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { t, toggleLanguage } = useI18n();
+  const { t, language, toggleLanguage } = useI18n();
   const { general, support } = useSiteConfig();
   const { user, profile, membership, isAdmin, loading, signOut } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -60,6 +68,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   const activePath = useMemo(() => (pathname === "/" ? "/dashboard" : pathname), [pathname]);
+  const homeVariant = variant === "home";
+  const navItems = homeVariant
+    ? homeNav.map((item) => ({ href: item.href, icon: item.icon, text: language === "bn" ? item.bn : item.en }))
+    : mainNav.map((item) => ({ href: item.href, icon: item.icon, text: t(item.label) }));
   const supportHref = isSafeExternalUrl(support.contactUrl)
     ? support.contactUrl
     : support.phone && /^\+?[0-9 ()-]{5,25}$/.test(support.phone) ? `tel:${support.phone.replace(/[^+0-9]/g, "")}` : null;
@@ -69,16 +81,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="app-frame">
-      <header className="app-header">
+    <div className={`app-frame ${homeVariant ? "home-app-frame" : ""}`}>
+      <header className={`app-header ${homeVariant ? "home-app-header" : ""}`}>
         <div className="header-inner">
           <button className="icon-button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation"><Menu /></button>
-          <Link href="/dashboard" className="brand" style={{ color: "inherit", textDecoration: "none" }}>
-            {general.logoUrl ? <img src={general.logoUrl} alt="" className="brand-mark" /> : <div className="brand-fallback">{general.siteName.slice(0, 1).toUpperCase()}</div>}
-            <span className="brand-name">{general.siteName}</span>
+          <Link href="/dashboard" className={`brand ${homeVariant ? "home-brand" : ""}`} style={{ color: "inherit", textDecoration: "none" }}>
+            {!homeVariant && (general.logoUrl ? <img src={general.logoUrl} alt="" className="brand-mark" /> : <div className="brand-fallback">{general.siteName.slice(0, 1).toUpperCase()}</div>)}
+            <span className="brand-name">{homeVariant ? "WICK ZONE BD" : general.siteName}</span>
           </Link>
           <div className="header-actions">
-            <button className="lang-pill" onClick={toggleLanguage} aria-label="Change language"><Languages size={17} /></button>
+            {!homeVariant && <button className="lang-pill" onClick={toggleLanguage} aria-label="Change language"><Languages size={17} /></button>}
             <Link href="/notifications" className="icon-button bell" aria-label="Notifications">
               <Bell size={23} />{unread > 0 && <span className="unread-dot" />}
             </Link>
@@ -86,11 +98,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <nav className="bottom-nav" aria-label="Primary navigation">
+      <nav className={`bottom-nav ${homeVariant ? "home-bottom-nav" : ""}`} aria-label="Primary navigation">
         <div className="bottom-nav-inner">
-          {mainNav.map(({ href, label, icon: Icon }) => {
+          {navItems.map(({ href, text, icon: Icon }) => {
             const active = activePath === href || activePath.startsWith(`${href}/`);
-            return <Link key={href} href={href} className={`nav-item ${active ? "active" : ""}`}><Icon size={22} /><span>{t(label)}</span></Link>;
+            return <Link key={href} href={href} className={`nav-item ${active ? "active" : ""}`}><Icon size={22} /><span>{text}</span></Link>;
           })}
         </div>
       </nav>
@@ -98,7 +110,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {children}
 
       {support.enabled && supportHref && (
-        <a className="support-fab" href={supportHref} target={supportHref.startsWith("http") ? "_blank" : undefined} rel={supportHref.startsWith("http") ? "noreferrer" : undefined} style={support.position === "left" ? { left: 16, right: "auto" } : { right: 16, left: "auto" }}>{support.iconUrl && isSafeExternalUrl(support.iconUrl) ? <img src={support.iconUrl} alt="" style={{ width: 21, height: 21, objectFit: "contain" }} /> : <LifeBuoy size={21} />}{support.label || t("common.support")}</a>
+        <a className={`support-fab ${homeVariant ? "home-support-fab" : ""}`} href={supportHref} target={supportHref.startsWith("http") ? "_blank" : undefined} rel={supportHref.startsWith("http") ? "noreferrer" : undefined} style={support.position === "left" ? { left: 16, right: "auto" } : { right: 16, left: "auto" }}>{support.iconUrl && isSafeExternalUrl(support.iconUrl) ? <img src={support.iconUrl} alt="" style={{ width: 21, height: 21, objectFit: "contain" }} /> : <LifeBuoy size={21} />}{homeVariant && language === "bn" ? "সাপোর্ট" : support.label || t("common.support")}</a>
       )}
 
       {drawerOpen && (
