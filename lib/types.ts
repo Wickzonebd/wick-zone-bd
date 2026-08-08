@@ -6,6 +6,7 @@ export interface PublicProfile {
   avatar_url: string | null;
   bio: string | null;
   badge_label: string | null;
+  is_social_verified?: boolean;
   referral_code: string;
   created_at: string;
   is_suspended: boolean;
@@ -27,6 +28,7 @@ export interface SiteGeneralSettings {
   backgroundColor: string;
   currency: string;
   activationPrice: number | null;
+  socialVerificationPrice: number | null;
   activationGateScope: string;
   memberBadgeWording: string;
   withdrawalMinimum: number;
