@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Boxes,
   ClipboardList,
@@ -127,12 +128,12 @@ export function ResellingClient() {
     if (!user) return;
     const supabase = getSupabaseBrowserClient(); if (!supabase) return;
     const alreadySaved = favorites.has(productId);
-    setFavorites((current) => { const next = new Set(current); alreadySaved ? next.delete(productId) : next.add(productId); return next; });
+    setFavorites((current) => { const next = new Set(current); if (alreadySaved) next.delete(productId); else next.add(productId); return next; });
     const result = alreadySaved
       ? await supabase.from("reselling_favorites").delete().eq("user_id", user.id).eq("product_id", productId)
       : await supabase.from("reselling_favorites").insert({ user_id: user.id, product_id: productId });
     if (result.error) {
-      setFavorites((current) => { const next = new Set(current); alreadySaved ? next.add(productId) : next.delete(productId); return next; });
+      setFavorites((current) => { const next = new Set(current); if (alreadySaved) next.add(productId); else next.delete(productId); return next; });
     }
   };
 
@@ -179,7 +180,7 @@ export function ResellingClient() {
           const category = product.category_id ? categoryById.get(product.category_id) : null;
           const vendor = product.vendor_id ? vendorById.get(product.vendor_id) : null;
           const saved = favorites.has(product.id);
-          return <article className="reselling-product-card" key={product.id}><div className="reselling-product-image">{product.image_url ? <img src={product.image_url} alt={localize(product.name_en, product.name_bn)} loading="lazy" /> : <PackageOpen size={40} />}{product.is_featured && <span className="reselling-featured">{t("reselling.featured")}</span>}<button type="button" className={`reselling-favorite ${saved ? "saved" : ""}`} aria-label={t("reselling.favorites")} onClick={() => void toggleFavorite(product.id)}><Heart size={18} fill={saved ? "currentColor" : "none"} /></button></div><div className="reselling-product-body"><small>{vendor?.name || (category ? localize(category.name_en, category.name_bn) : "Taskora")}</small><h3>{localize(product.name_en, product.name_bn)}</h3><div className="reselling-product-price"><strong>{formatMoney(Number(product.price), general.currency, language)}</strong>{product.compare_at_price && Number(product.compare_at_price) > Number(product.price) && <del>{formatMoney(Number(product.compare_at_price), general.currency, language)}</del>}</div>{product.stock_count === 0 && <span className="reselling-sold-out">{t("reselling.soldOut")}</span>}</div></article>;
+          return <article className="reselling-product-card" key={product.id}><Link href={`/reselling/${product.id}`} className="reselling-product-link"><div className="reselling-product-image">{product.image_url ? <img src={product.image_url} alt={localize(product.name_en, product.name_bn)} loading="lazy" /> : <PackageOpen size={40} />}{product.is_featured && <span className="reselling-featured">{t("reselling.featured")}</span>}</div><div className="reselling-product-body"><small>{vendor?.name || (category ? localize(category.name_en, category.name_bn) : "Taskora")}</small><h3>{localize(product.name_en, product.name_bn)}</h3><div className="reselling-product-price"><strong>{formatMoney(Number(product.price), general.currency, language)}</strong>{product.compare_at_price && Number(product.compare_at_price) > Number(product.price) && <del>{formatMoney(Number(product.compare_at_price), general.currency, language)}</del>}</div>{product.stock_count === 0 && <span className="reselling-sold-out">{t("reselling.soldOut")}</span>}</div></Link><button type="button" className={`reselling-favorite ${saved ? "saved" : ""}`} aria-label={t("reselling.favorites")} onClick={() => void toggleFavorite(product.id)}><Heart size={18} fill={saved ? "currentColor" : "none"} /></button></article>;
         })}</div> : <div className="reselling-empty-panel compact"><PackageOpen size={34} /><p>{view === "favorites" ? t("reselling.noFavorites") : t("reselling.noProducts")}</p>{view === "favorites" && <button type="button" className="primary-button compact" onClick={() => openShop()}>{t("reselling.browse")}</button>}</div>}
       </section>
     </>}
