@@ -5,11 +5,13 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft, BadgeCheck, Bell, BriefcaseBusiness, ChevronRight, CircleUserRound, Home, Languages, LayoutDashboard, LogOut,
   Menu, Network, Newspaper, ShieldCheck, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound,
+  type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { useI18n } from "@/components/i18n-provider";
 import { useSiteConfig } from "@/components/site-config-provider";
+import { TaskoraLockup, TaskoraMark } from "@/components/taskora-brand";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isSafeExternalUrl } from "@/lib/url";
 
@@ -31,7 +33,13 @@ const drawerNav = [
   { href: "/profile", label: "profile.update", icon: UserRoundCog },
 ];
 
-export function AppShell({ children, variant = "default", hidePrimaryNav = false }: { children: React.ReactNode; variant?: "default" | "home" | "feed" | "hub"; hidePrimaryNav?: boolean }) {
+type AdminNavigation = {
+  activeId: string;
+  items: Array<{ id: string; label: string; icon: LucideIcon }>;
+  onSelect: (id: string) => void;
+};
+
+export function AppShell({ children, variant = "default", hidePrimaryNav = false, adminNavigation }: { children: React.ReactNode; variant?: "default" | "home" | "feed" | "hub"; hidePrimaryNav?: boolean; adminNavigation?: AdminNavigation }) {
   const pathname = usePathname();
   const router = useRouter();
   const { t, language, toggleLanguage } = useI18n();
@@ -80,6 +88,7 @@ export function AppShell({ children, variant = "default", hidePrimaryNav = false
           <div className="hub-header-left">
             <button className="icon-button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation"><Menu size={20} /></button>
             <button className="icon-button" onClick={() => router.back()} aria-label="Go back"><ArrowLeft size={19} /></button>
+            <TaskoraMark size={28} className="hub-taskora-mark" />
             <Link href="/dashboard" className="hub-header-title">{general.siteName}</Link>
           </div>
           <div className="header-actions">
@@ -91,8 +100,8 @@ export function AppShell({ children, variant = "default", hidePrimaryNav = false
         </div> : <div className="header-inner">
           <button className="icon-button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation"><Menu /></button>
           <Link href={hidePrimaryNav && isAdmin ? "/admin-login" : "/dashboard"} className={`brand ${homeVariant ? "home-brand" : ""}`} style={{ color: "inherit", textDecoration: "none" }}>
-            {!homeVariant && (hidePrimaryNav && isAdmin ? <div className="brand-fallback"><ShieldCheck size={20} /></div> : general.logoUrl ? <img src={general.logoUrl} alt="" className="brand-mark" /> : <div className="brand-fallback">{general.siteName.slice(0, 1).toUpperCase()}</div>)}
-            <span className="brand-name">{homeVariant ? "WICK ZONE BD" : hidePrimaryNav && isAdmin ? "Admin Control Center" : general.siteName}</span>
+            {hidePrimaryNav && isAdmin ? <TaskoraMark size={38} /> : general.logoUrl ? <img src={general.logoUrl} alt="" className="brand-mark" /> : <TaskoraMark size={38} />}
+            <span className="brand-name">{hidePrimaryNav && isAdmin ? "Taskora Admin" : general.siteName}</span>
           </Link>
           <div className="header-actions">
             {!homeVariant && <button className="lang-pill" onClick={toggleLanguage} aria-label="Change language"><Languages size={17} /></button>}
@@ -120,22 +129,32 @@ export function AppShell({ children, variant = "default", hidePrimaryNav = false
 
       {drawerOpen && (
         <div className="drawer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setDrawerOpen(false)}>
-          <aside className="drawer" aria-label="Navigation drawer">
-            <div style={{ display: "flex", justifyContent: "flex-end", padding: 12 }}><button className="secondary-button" style={{ minHeight: 44, width: 44, padding: 0 }} onClick={() => setDrawerOpen(false)}><X size={20} /></button></div>
-            <div className="drawer-profile">
+          <aside className={`drawer ${adminNavigation ? "admin-drawer" : ""}`} aria-label={adminNavigation ? "Admin navigation" : "Navigation drawer"}>
+            <div className="drawer-close-row"><button className="secondary-button" aria-label="Close navigation" onClick={() => setDrawerOpen(false)}><X size={20} /></button></div>
+            {adminNavigation ? <div className="admin-drawer-head">
+              <TaskoraLockup markSize={42} />
+              <span>Control Center</span>
+              <small><ShieldCheck size={13} /> Administrator · Full access</small>
+            </div> : <div className="drawer-profile">
               {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="drawer-avatar" /> : <div className="drawer-avatar"><CircleUserRound size={38} /></div>}
               <h2 style={{ margin: 0, fontSize: "1.35rem", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>{profile?.full_name ?? user.email}{hasFullAccess && <BadgeCheck className="verified-check" size={20} aria-label="Verified" />}</h2>
               <span className={`status ${hasFullAccess ? "active" : "pending"}`} style={{ marginTop: 9 }}>
-                {hasFullAccess ? <ShieldCheck size={14} /> : <LockKeyhole size={14} />}{isAdmin ? "Administrator · Full access" : membership?.status ?? "locked"}
+                {hasFullAccess ? <ShieldCheck size={14} /> : <LockKeyhole size={14} />}{membership?.status ?? "locked"}
               </span>
-            </div>
+            </div>}
             <div className="drawer-menu">
-              {drawerNav.map(({ href, label, icon: Icon }) => <Link key={href} className="drawer-link" href={href} onClick={() => setDrawerOpen(false)}><Icon size={21} />{t(label)}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></Link>)}
-              {support.enabled && supportHref && <a className="drawer-link" href={supportHref} target={supportHref.startsWith("http") ? "_blank" : undefined} rel={supportHref.startsWith("http") ? "noreferrer" : undefined}><LifeBuoy size={21} />{t("common.support")}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></a>}
-              <Link className="drawer-link" href="/privacy" onClick={() => setDrawerOpen(false)}><FileText size={21} />{t("common.privacy")}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></Link>
-              <Link className="drawer-link" href="/reset-password" onClick={() => setDrawerOpen(false)}><KeyRound size={21} />{t("profile.password")}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></Link>
-              {isAdmin && <Link className="drawer-link" href="/admin-login" onClick={() => setDrawerOpen(false)}><ShieldCheck size={21} />{t("common.admin")}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></Link>}
-              <button className="drawer-link danger" style={{ border: 0, background: "transparent", width: "100%" }} onClick={async () => { await signOut(); router.replace("/login"); }}><LogOut size={21} />{t("common.logout")}</button>
+              {adminNavigation ? <>
+                {adminNavigation.items.map(({ id, label, icon: Icon }) => <button type="button" key={id} className={`drawer-link admin-drawer-link ${adminNavigation.activeId === id ? "active" : ""}`} onClick={() => { adminNavigation.onSelect(id); setDrawerOpen(false); }}><Icon size={20} /><span>{label}</span>{adminNavigation.activeId === id && <span className="admin-drawer-active-dot" />}</button>)}
+                <div className="admin-drawer-divider" />
+                <button className="drawer-link admin-drawer-link danger" type="button" onClick={async () => { await signOut(); router.replace("/login"); }}><LogOut size={20} /><span>{t("common.logout")}</span></button>
+              </> : <>
+                {drawerNav.map(({ href, label, icon: Icon }) => <Link key={href} className="drawer-link" href={href} onClick={() => setDrawerOpen(false)}><Icon size={21} />{t(label)}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></Link>)}
+                {support.enabled && supportHref && <a className="drawer-link" href={supportHref} target={supportHref.startsWith("http") ? "_blank" : undefined} rel={supportHref.startsWith("http") ? "noreferrer" : undefined}><LifeBuoy size={21} />{t("common.support")}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></a>}
+                <Link className="drawer-link" href="/privacy" onClick={() => setDrawerOpen(false)}><FileText size={21} />{t("common.privacy")}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></Link>
+                <Link className="drawer-link" href="/reset-password" onClick={() => setDrawerOpen(false)}><KeyRound size={21} />{t("profile.password")}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></Link>
+                {isAdmin && <Link className="drawer-link" href="/admin-login" onClick={() => setDrawerOpen(false)}><ShieldCheck size={21} />{t("common.admin")}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></Link>}
+                <button className="drawer-link danger" style={{ border: 0, background: "transparent", width: "100%" }} onClick={async () => { await signOut(); router.replace("/login"); }}><LogOut size={21} />{t("common.logout")}</button>
+              </>}
             </div>
           </aside>
         </div>
