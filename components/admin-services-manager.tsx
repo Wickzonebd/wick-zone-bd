@@ -1,0 +1,220 @@
+"use client";
+
+import { Edit3, Plus, RefreshCw, ShoppingBag, ToggleLeft, ToggleRight, Trash2, X } from "lucide-react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
+import { formatMoney } from "@/lib/money";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+
+interface MarketplaceService {
+  id: string;
+  platform: string;
+  service_type: string;
+  name_en: string;
+  name_bn: string | null;
+  description_en: string | null;
+  description_bn: string | null;
+  quantity: number;
+  price: number | string;
+  delivery_note: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+const platforms = ["facebook", "instagram", "youtube", "tiktok", "other"] as const;
+const serviceTypes = ["likes", "followers", "subscribers", "views", "comments", "shares", "custom"] as const;
+
+const emptyDraft = {
+  platform: "facebook",
+  serviceType: "likes",
+  nameEn: "",
+  nameBn: "",
+  descriptionEn: "",
+  descriptionBn: "",
+  quantity: "1000",
+  price: "",
+  deliveryNote: "",
+  sortOrder: "0",
+  isActive: true,
+};
+
+const titleCase = (value: string) => value.replace(/(^|[-_\s])\w/g, (match) => match.toUpperCase());
+
+export function AdminServicesManager({ currency }: { currency: string }) {
+  const [items, setItems] = useState<MarketplaceService[]>([]);
+  const [draft, setDraft] = useState(() => ({ ...emptyDraft }));
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const load = useCallback(async () => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      setMessage({ type: "error", text: "Service catalog is temporarily unavailable." });
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("marketplace_services")
+      .select("id,platform,service_type,name_en,name_bn,description_en,description_bn,quantity,price,delivery_note,sort_order,is_active,created_at")
+      .order("sort_order")
+      .order("created_at", { ascending: false });
+    if (error) setMessage({ type: "error", text: error.message });
+    setItems((data as MarketplaceService[]) ?? []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const reset = () => {
+    setDraft({ ...emptyDraft });
+    setEditingId(null);
+  };
+
+  const save = async (event: FormEvent) => {
+    event.preventDefault();
+    const quantity = Number(draft.quantity);
+    const price = Number(draft.price);
+    const sortOrder = Number(draft.sortOrder || 0);
+    if (!draft.nameEn.trim() || !Number.isInteger(quantity) || quantity <= 0 || !Number.isFinite(price) || price <= 0 || !Number.isInteger(sortOrder)) {
+      setMessage({ type: "error", text: "Add a service name, a valid quantity, price and whole-number sort order." });
+      return;
+    }
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    setSaving(true);
+    setMessage(null);
+    const payload = {
+      platform: draft.platform,
+      service_type: draft.serviceType,
+      name_en: draft.nameEn.trim(),
+      name_bn: draft.nameBn.trim() || null,
+      description_en: draft.descriptionEn.trim() || null,
+      description_bn: draft.descriptionBn.trim() || null,
+      quantity,
+      price,
+      delivery_note: draft.deliveryNote.trim() || null,
+      sort_order: sortOrder,
+      is_active: draft.isActive,
+    };
+    const result = editingId
+      ? await supabase.from("marketplace_services").update(payload).eq("id", editingId)
+      : await supabase.from("marketplace_services").insert(payload);
+    setSaving(false);
+    if (result.error) {
+      setMessage({ type: "error", text: result.error.message });
+      return;
+    }
+    setMessage({ type: "success", text: editingId ? "Service updated." : "Service added to the catalog." });
+    reset();
+    await load();
+  };
+
+  const edit = (item: MarketplaceService) => {
+    setEditingId(item.id);
+    setDraft({
+      platform: item.platform,
+      serviceType: item.service_type,
+      nameEn: item.name_en,
+      nameBn: item.name_bn ?? "",
+      descriptionEn: item.description_en ?? "",
+      descriptionBn: item.description_bn ?? "",
+      quantity: String(item.quantity),
+      price: String(item.price),
+      deliveryNote: item.delivery_note ?? "",
+      sortOrder: String(item.sort_order),
+      isActive: item.is_active,
+    });
+    setMessage(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const toggleActive = async (item: MarketplaceService) => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    const { error } = await supabase.from("marketplace_services").update({ is_active: !item.is_active }).eq("id", item.id);
+    setMessage(error ? { type: "error", text: error.message } : { type: "success", text: `${item.name_en} is now ${item.is_active ? "hidden" : "active"}.` });
+    if (!error) await load();
+  };
+
+  const remove = async (item: MarketplaceService) => {
+    if (!window.confirm(`Delete "${item.name_en}" permanently?`)) return;
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    const { error } = await supabase.from("marketplace_services").delete().eq("id", item.id);
+    setMessage(error ? { type: "error", text: error.message } : { type: "success", text: "Service deleted." });
+    if (!error) {
+      if (editingId === item.id) reset();
+      await load();
+    }
+  };
+
+  return (
+    <section className="admin-section admin-services">
+      <div className="admin-section-head">
+        <div>
+          <span className="admin-kicker">SOCIAL SERVICE CATALOG</span>
+          <h2>Services</h2>
+          <p>Create the packages you sell: Facebook likes, Instagram followers, YouTube subscribers, views and more.</p>
+        </div>
+        <button type="button" className="secondary-button compact" onClick={() => void load()}><RefreshCw size={16} />Refresh</button>
+      </div>
+
+      {message && <div className={`form-message ${message.type}`} style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", gap: 12 }}>{message.text}<button type="button" aria-label="Dismiss" onClick={() => setMessage(null)} style={{ border: 0, background: "transparent", color: "inherit" }}><X size={17} /></button></div>}
+
+      <div className="admin-service-layout">
+        <form className="card admin-service-form" onSubmit={save}>
+          <div className="admin-service-form-title"><span className="admin-command-icon"><ShoppingBag size={20} /></span><div><strong>{editingId ? "Edit service" : "Add a service"}</strong><small>All catalog details are controlled here.</small></div></div>
+
+          <div className="admin-service-form-grid">
+            <div className="field"><label>Platform</label><select className="select" value={draft.platform} onChange={(event) => setDraft((value) => ({ ...value, platform: event.target.value }))}>{platforms.map((item) => <option key={item} value={item}>{titleCase(item)}</option>)}</select></div>
+            <div className="field"><label>Service type</label><select className="select" value={draft.serviceType} onChange={(event) => setDraft((value) => ({ ...value, serviceType: event.target.value }))}>{serviceTypes.map((item) => <option key={item} value={item}>{titleCase(item)}</option>)}</select></div>
+          </div>
+
+          <div className="field"><label>Service name</label><input className="input" value={draft.nameEn} onChange={(event) => setDraft((value) => ({ ...value, nameEn: event.target.value }))} placeholder="e.g. Facebook Likes — 1,000" maxLength={140} required /></div>
+          <div className="field"><label>Bangla name (optional)</label><input className="input" value={draft.nameBn} onChange={(event) => setDraft((value) => ({ ...value, nameBn: event.target.value }))} maxLength={140} /></div>
+
+          <div className="admin-service-form-grid">
+            <div className="field"><label>Quantity</label><input className="input" type="number" min={1} step={1} value={draft.quantity} onChange={(event) => setDraft((value) => ({ ...value, quantity: event.target.value }))} required /></div>
+            <div className="field"><label>Price ({currency})</label><input className="input" type="number" min="0.01" step="0.01" value={draft.price} onChange={(event) => setDraft((value) => ({ ...value, price: event.target.value }))} placeholder="0.00" required /></div>
+          </div>
+
+          <div className="field"><label>Delivery note (optional)</label><input className="input" value={draft.deliveryNote} onChange={(event) => setDraft((value) => ({ ...value, deliveryNote: event.target.value }))} placeholder="e.g. Starts within 1–6 hours" maxLength={240} /></div>
+          <div className="field"><label>Description (optional)</label><textarea className="textarea" value={draft.descriptionEn} onChange={(event) => setDraft((value) => ({ ...value, descriptionEn: event.target.value }))} maxLength={1200} /></div>
+          <div className="field"><label>Bangla description (optional)</label><textarea className="textarea" value={draft.descriptionBn} onChange={(event) => setDraft((value) => ({ ...value, descriptionBn: event.target.value }))} maxLength={1200} /></div>
+
+          <div className="admin-service-form-grid align-end">
+            <div className="field"><label>Sort order</label><input className="input" type="number" step={1} value={draft.sortOrder} onChange={(event) => setDraft((value) => ({ ...value, sortOrder: event.target.value }))} /></div>
+            <label className="admin-service-active"><input type="checkbox" checked={draft.isActive} onChange={(event) => setDraft((value) => ({ ...value, isActive: event.target.checked }))} /><span>Active / visible</span></label>
+          </div>
+
+          <div className="admin-service-form-actions">
+            <button className="primary-button" type="submit" disabled={saving}><Plus size={18} />{saving ? "Saving…" : editingId ? "Update service" : "Add service"}</button>
+            {editingId && <button type="button" className="secondary-button" onClick={reset}><X size={18} />Cancel</button>}
+          </div>
+        </form>
+
+        <div className="admin-service-list">
+          {loading ? <div className="card admin-service-empty">Loading services…</div> : items.length === 0 ? <div className="card admin-service-empty"><ShoppingBag size={28} /><strong>No services yet</strong><span>Add your first Facebook, Instagram or YouTube package from the form.</span></div> : items.map((item) => (
+            <article className={`card admin-service-card ${item.is_active ? "" : "is-inactive"}`} key={item.id}>
+              <div className={`admin-service-platform ${item.platform.toLowerCase()}`}>{item.platform.slice(0, 1).toUpperCase()}</div>
+              <div className="admin-service-card-body">
+                <div className="admin-service-card-top"><div><span className="admin-service-chip">{titleCase(item.platform)} · {titleCase(item.service_type)}</span><h3>{item.name_en}</h3></div><span className={`status ${item.is_active ? "active" : "pending"}`}>{item.is_active ? "Active" : "Hidden"}</span></div>
+                <div className="admin-service-price"><strong>{formatMoney(Number(item.price), currency, "en")}</strong><span>{item.quantity.toLocaleString()} {item.service_type}</span></div>
+                {item.delivery_note && <p className="muted">{item.delivery_note}</p>}
+                <div className="admin-service-card-actions">
+                  <button type="button" className="secondary-button compact" onClick={() => edit(item)}><Edit3 size={15} />Edit</button>
+                  <button type="button" className="secondary-button compact" onClick={() => void toggleActive(item)}>{item.is_active ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}{item.is_active ? "Hide" : "Activate"}</button>
+                  <button type="button" className="danger-button compact" onClick={() => void remove(item)}><Trash2 size={15} />Delete</button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
