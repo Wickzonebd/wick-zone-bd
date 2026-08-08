@@ -160,6 +160,7 @@
     "badge": "Badge",
     "adjust": "Wallet adjustment",
     "suspend": "Suspend",
-    "restore": "Restore"
+    "restore": "Restore",
+    "services": "Services"
   }
 }
