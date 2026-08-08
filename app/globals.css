@@ -951,3 +951,127 @@ img { max-width: 100%; }
   .admin-service-platform { width:42px; height:42px; flex-basis:42px; border-radius:13px; }
   .admin-service-card-top { align-items:flex-start; }
 }
+
+/* Taskora Reselling storefront and raised center navigation. */
+.nav-icon-wrap { display: grid; place-items: center; }
+@media (max-width: 859px) {
+  .nav-item-reselling { z-index: 2; transform: translateY(-11px); color: #e39400 !important; }
+  .nav-item-reselling .nav-icon-wrap { width: 54px; height: 54px; margin-bottom: -1px; border: 5px solid #fff; border-radius: 50%; color: #fff; background: linear-gradient(145deg,#ffb300,#f48c06); box-shadow: 0 8px 20px rgba(244,140,6,.32); }
+  .nav-item-reselling > span:last-child { color: #d98500; font-weight: 800; }
+  .nav-item-reselling.active::after,
+  .home-bottom-nav .nav-item-reselling.active::after,
+  .hub-app-frame .nav-item-reselling.active::after { display: none; }
+}
+@media (min-width: 860px) {
+  .nav-item-reselling { transform: none; }
+  .nav-item-reselling .nav-icon-wrap { width: auto; height: auto; margin: 0; border: 0; border-radius: 0; color: inherit; background: transparent; box-shadow: none; }
+}
+
+.reselling-page { min-height: calc(100dvh - 74px); padding: 16px 12px 44px; color: #172033; background: #f2f5f6; }
+.reselling-container { width: min(100%,860px); margin: 0 auto; display: grid; gap: 14px; }
+.reselling-top-card { padding: 15px; border: 1px solid #e5e8eb; border-radius: 23px; background: #fff; box-shadow: 0 7px 24px rgba(27,36,49,.06); }
+.reselling-title-row { margin-bottom: 13px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #e49300; }
+.reselling-title-row span { display: block; margin-bottom: 2px; color: #e49300; font-size: 10px; font-weight: 850; letter-spacing: 1.5px; text-transform: uppercase; }
+.reselling-title-row h1 { margin: 0; color: #172033; font-size: 23px; letter-spacing: -.45px; }
+.reselling-search { height: 50px; padding: 0 14px; display: flex; align-items: center; gap: 10px; border: 1px solid #e7eaed; border-radius: 15px; color: #717b89; background: #f6f8f9; }
+.reselling-search:focus-within { border-color: #f3ad29; box-shadow: 0 0 0 3px rgba(243,173,41,.13); background: #fff; }
+.reselling-search input { width: 100%; border: 0; outline: 0; color: #172033; background: transparent; font: inherit; }
+.reselling-search input::placeholder { color: #9aa3ad; }
+
+.reselling-banner-strip { display: grid; grid-auto-flow: column; grid-auto-columns: min(90%,680px); gap: 10px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
+.reselling-banner-strip::-webkit-scrollbar { display: none; }
+.reselling-banner { position: relative; min-height: 154px; overflow: hidden; padding: 22px; border-radius: 22px; display: flex; align-items: center; justify-content: space-between; gap: 18px; color: #fff; text-decoration: none; background: linear-gradient(130deg,#f4ad17,#ffca38 58%,#ffdf7b); box-shadow: 0 9px 25px rgba(230,157,13,.18); scroll-snap-align: start; }
+.reselling-banner::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg,rgba(53,32,0,.48),rgba(53,32,0,.08) 62%,transparent); pointer-events: none; }
+.reselling-banner-copy { position: relative; z-index: 2; max-width: 68%; display: grid; gap: 6px; }
+.reselling-banner-copy strong { font-size: clamp(19px,4.5vw,28px); line-height: 1.12; }
+.reselling-banner-copy span { font-size: 12px; line-height: 1.4; opacity: .95; }
+.reselling-banner img { position: absolute; z-index: 1; inset: 0 0 0 auto; width: 55%; height: 100%; object-fit: cover; }
+.reselling-brand-banner { min-height: 138px; background: linear-gradient(135deg,#f59e0b,#fbbf24 64%,#fde68a); }
+.reselling-brand-banner > svg { position: relative; z-index: 2; flex: 0 0 auto; }
+.reselling-banner-skeleton { height: 154px; border-radius: 22px; background: linear-gradient(90deg,#eaedf0,#f7f8f9,#eaedf0); background-size: 200% 100%; animation: resellingShimmer 1.1s linear infinite; }
+
+.reselling-shortcuts { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 9px; }
+.reselling-shortcuts button { min-width: 0; min-height: 89px; padding: 9px 5px; border: 1px solid #e5e8eb; border-radius: 17px; display: grid; place-items: center; align-content: center; gap: 7px; color: #536071; background: #fff; box-shadow: 0 5px 14px rgba(28,39,55,.045); cursor: pointer; }
+.reselling-shortcuts button > span { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; color: #ea9907; background: #fff6dc; }
+.reselling-shortcuts button strong { max-width: 100%; overflow: hidden; font-size: 11px; line-height: 1.15; text-overflow: ellipsis; }
+.reselling-shortcuts button.active { border-color: #f4ba45; color: #b87500; background: #fffaf0; }
+
+.reselling-section, .reselling-category-strip-wrap { padding: 15px; border: 1px solid #e5e8eb; border-radius: 21px; background: #fff; box-shadow: 0 5px 18px rgba(28,39,55,.04); }
+.reselling-section-head { min-height: 32px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.reselling-section-head h2 { margin: 0; font-size: 18px; letter-spacing: -.3px; }
+.reselling-section-head small { display: block; margin-top: 2px; color: #8a95a2; }
+.reselling-section-head button { border: 0; padding: 5px; color: #df9000; background: transparent; font: inherit; font-size: 11px; font-weight: 750; cursor: pointer; }
+.reselling-category-strip { display: grid; grid-auto-flow: column; grid-auto-columns: 78px; gap: 10px; overflow-x: auto; padding: 2px 1px 4px; scrollbar-width: none; }
+.reselling-category-strip::-webkit-scrollbar { display: none; }
+.reselling-category-strip button { min-width: 0; border: 0; padding: 0; display: grid; justify-items: center; gap: 6px; color: #556171; background: transparent; cursor: pointer; }
+.reselling-category-strip button > span, .reselling-category-strip img { width: 58px; height: 58px; border: 2px solid transparent; border-radius: 17px; display: grid; place-items: center; object-fit: cover; color: #e79500; background: #fff5d8; }
+.reselling-category-strip button.active > span, .reselling-category-strip button.active img { border-color: #f2ad27; box-shadow: 0 0 0 3px rgba(242,173,39,.12); }
+.reselling-category-strip strong { width: 78px; overflow: hidden; font-size: 10px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
+.reselling-category-strip button.active strong { color: #d98600; }
+
+.reselling-product-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.reselling-product-card { min-width: 0; overflow: hidden; border: 1px solid #e8ebee; border-radius: 17px; background: #fff; box-shadow: 0 4px 13px rgba(22,33,49,.05); }
+.reselling-product-image { position: relative; aspect-ratio: 1.05; display: grid; place-items: center; overflow: hidden; color: #c0c7ce; background: #f2f4f5; }
+.reselling-product-image > img { width: 100%; height: 100%; object-fit: cover; transition: transform .2s ease; }
+.reselling-product-card:hover .reselling-product-image > img { transform: scale(1.025); }
+.reselling-favorite { position: absolute; z-index: 3; top: 8px; right: 8px; width: 32px; height: 32px; border: 1px solid rgba(255,255,255,.8); border-radius: 50%; display: grid; place-items: center; color: #687483; background: rgba(255,255,255,.92); box-shadow: 0 3px 9px rgba(0,0,0,.12); cursor: pointer; }
+.reselling-favorite.saved { color: #e83e52; }
+.reselling-featured { position: absolute; z-index: 3; left: 8px; top: 8px; padding: 4px 7px; border-radius: 999px; color: #785000; background: #ffe48b; font-size: 8px; font-weight: 850; text-transform: uppercase; }
+.reselling-product-body { padding: 10px; }
+.reselling-product-body > small { display: block; margin-bottom: 3px; overflow: hidden; color: #98a0aa; font-size: 9px; white-space: nowrap; text-overflow: ellipsis; }
+.reselling-product-body h3 { min-height: 35px; margin: 0 0 7px; overflow: hidden; display: -webkit-box; color: #253044; font-size: 12px; line-height: 1.4; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.reselling-product-price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+.reselling-product-price strong { color: #d98600; font-size: 13px; }
+.reselling-product-price del { color: #a3a9b2; font-size: 9px; }
+.reselling-sold-out { display: inline-flex; margin-top: 7px; padding: 3px 6px; border-radius: 6px; color: #b42335; background: #fff0f1; font-size: 8px; font-weight: 800; }
+.reselling-product-skeleton { aspect-ratio: .78; border-radius: 17px; background: linear-gradient(90deg,#eaedf0,#f8f9fa,#eaedf0); background-size: 200% 100%; animation: resellingShimmer 1.1s linear infinite; }
+
+.reselling-directory-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+.reselling-directory-card { min-width: 0; min-height: 76px; padding: 10px; border: 1px solid #e8ebee; border-radius: 16px; display: flex; align-items: center; gap: 10px; color: #253044; text-align: left; background: #fff; cursor: pointer; }
+.reselling-directory-card > img, .reselling-directory-icon { width: 48px; height: 48px; flex: 0 0 48px; border-radius: 14px; display: grid; place-items: center; object-fit: cover; color: #df9000; background: #fff5d9; }
+.reselling-directory-card div { min-width: 0; }
+.reselling-directory-card strong { display: block; overflow: hidden; font-size: 12px; white-space: nowrap; text-overflow: ellipsis; }
+.reselling-directory-card small { margin-top: 3px; overflow: hidden; display: -webkit-box; color: #8a95a2; font-size: 9px; line-height: 1.35; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.reselling-empty-panel { min-height: 190px; padding: 25px; border: 1px dashed #dcdfe4; border-radius: 20px; display: grid; place-items: center; align-content: center; gap: 9px; color: #8994a2; text-align: center; background: #fff; }
+.reselling-empty-panel.compact { min-height: 140px; }
+.reselling-empty-panel h2, .reselling-empty-panel p { margin: 0; }
+.reselling-empty-panel h2 { color: #334054; font-size: 17px; }
+.reselling-empty-panel p { max-width: 390px; font-size: 12px; line-height: 1.5; }
+@keyframes resellingShimmer { to { background-position: -200% 0; } }
+
+/* Wallet now lives with the rest of the profile utilities. */
+.profile-utility-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.profile-utility-actions .secondary-button { min-width: 0; text-decoration: none; }
+
+/* Reselling manager inside the Taskora admin drawer workflow. */
+.admin-reselling-tabs { margin-bottom: 15px; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+.admin-reselling-tabs button { min-width: 0; min-height: 48px; padding: 8px 10px; border: 1px solid #dfe4ea; border-radius: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; color: #657286; background: #fff; font: inherit; font-size: 11px; font-weight: 750; cursor: pointer; }
+.admin-reselling-tabs button.active { border-color: rgba(255,78,42,.28); color: var(--primary); background: rgba(255,78,42,.07); }
+.admin-reselling-tabs small { min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center; color: #fff; background: #8f99a7; font-size: 9px; }
+.admin-reselling-tabs button.active small { background: var(--primary); }
+.admin-reselling-checks { display: flex; flex-wrap: wrap; gap: 12px 18px; }
+.admin-reselling-checks label { display: flex; align-items: center; gap: 7px; color: #576578; font-size: 12px; font-weight: 700; }
+.admin-reselling-card { padding: 12px; display: flex; align-items: flex-start; gap: 11px; }
+.admin-reselling-card.is-inactive { opacity: .68; }
+.admin-reselling-thumb { width: 70px; height: 70px; flex: 0 0 70px; border-radius: 13px; object-fit: cover; background: #eef2f5; }
+.admin-reselling-thumb.placeholder { display: grid; place-items: center; color: #9aa5b1; }
+.admin-reselling-card-body { min-width: 0; flex: 1; }
+.admin-reselling-card-body h3 { margin: 3px 0 7px; font-size: 14px; }
+.admin-reselling-card-body p { margin: 4px 0 9px; font-size: 11px; }
+
+@media (min-width: 620px) {
+  .reselling-product-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .reselling-directory-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (min-width: 820px) {
+  .reselling-product-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+}
+@media (max-width: 520px) {
+  .reselling-page { padding-inline: 10px; }
+  .reselling-shortcuts { gap: 6px; }
+  .reselling-shortcuts button { min-height: 82px; border-radius: 15px; }
+  .reselling-directory-grid { grid-template-columns: 1fr 1fr; }
+  .admin-reselling-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .admin-reselling-card { padding: 10px; }
+  .admin-reselling-thumb { width: 58px; height: 58px; flex-basis: 58px; }
+}
