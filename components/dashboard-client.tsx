@@ -1,6 +1,7 @@
 "use client";
 
-import { Globe2, ImageIcon, Link2, Mail, MessageCircle, Play, Send, ShieldCheck, ShoppingCart, Zap } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Globe2, ImageIcon, Link2, Mail, MessageCircle, Play, Send, ShieldCheck, ShoppingCart, Trophy, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivationModal } from "@/components/activation-modal";
 import { AppShell } from "@/components/app-shell";
@@ -146,6 +147,12 @@ export function DashboardClient() {
               {banners.length > 1 && <div className="home-banner-dots">{banners.map((banner, index) => <button key={banner.id} className={`home-banner-dot ${index === slide ? "active" : ""}`} onClick={() => setSlide(index)} aria-label={`Banner ${index + 1}`} />)}</div>}
             </div>
           )}
+
+          <Link href="/ludo" className="home-ludo-feature">
+            <span className="home-ludo-icon"><Trophy size={28} /></span>
+            <span className="home-ludo-copy"><span>GAMING ZONE · NEW</span><strong>{language === "bn" ? "লুডু টুর্নামেন্ট" : "Ludo Tournament"}</strong><small>{language === "bn" ? "ম্যাচে যোগ দিন, খেলুন এবং পুরস্কার জিতুন" : "Join a match, play Ludo and win prizes"}</small></span>
+            <span className="home-ludo-arrow"><ChevronRight size={20} /></span>
+          </Link>
 
           {error && !loading && <div className="form-message error">{t("common.error")}</div>}
 
