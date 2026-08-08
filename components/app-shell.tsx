@@ -133,7 +133,7 @@ export function AppShell({ children, variant = "default" }: { children: React.Re
               {support.enabled && supportHref && <a className="drawer-link" href={supportHref} target={supportHref.startsWith("http") ? "_blank" : undefined} rel={supportHref.startsWith("http") ? "noreferrer" : undefined}><LifeBuoy size={21} />{t("common.support")}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></a>}
               <Link className="drawer-link" href="/privacy" onClick={() => setDrawerOpen(false)}><FileText size={21} />{t("common.privacy")}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></Link>
               <Link className="drawer-link" href="/reset-password" onClick={() => setDrawerOpen(false)}><KeyRound size={21} />{t("profile.password")}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></Link>
-              {isAdmin && <Link className="drawer-link" href="/admin" onClick={() => setDrawerOpen(false)}><ShieldCheck size={21} />{t("common.admin")}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></Link>}
+              {isAdmin && <Link className="drawer-link" href="/admin-login" onClick={() => setDrawerOpen(false)}><ShieldCheck size={21} />{t("common.admin")}<ChevronRight size={17} style={{ marginLeft: "auto" }} /></Link>}
               <button className="drawer-link danger" style={{ border: 0, background: "transparent", width: "100%" }} onClick={async () => { await signOut(); router.replace("/login"); }}><LogOut size={21} />{t("common.logout")}</button>
             </div>
           </aside>
