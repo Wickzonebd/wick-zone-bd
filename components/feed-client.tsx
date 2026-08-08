@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, CircleUserRound, Flag, Link2, MessageCircle, MoreHorizontal, Send, Share2, ThumbsUp, Trash2, UserPlus, UsersRound } from "lucide-react";
+import { BadgeCheck, ChevronDown, CircleUserRound, Flag, Link2, MessageCircle, MoreHorizontal, Send, Share2, ThumbsUp, Trash2, UserPlus, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -155,7 +155,7 @@ export function FeedClient() {
           {post.is_pinned && <div className="facebook-pinned">📌 {t("feed.pinned")}</div>}
           <div className="facebook-post-header">
             <Link href={`/profile?user=${post.author.id}`} className="facebook-avatar">{post.author.avatar_url ? <img src={post.author.avatar_url} alt="" /> : post.author.full_name?.trim().charAt(0).toUpperCase() || "M"}</Link>
-            <div className="facebook-post-info"><div className="facebook-post-name"><strong>{post.author.full_name}</strong>{post.author.badge_label && <span className="status active">{post.author.badge_label}</span>}</div><span>{new Date(post.created_at).toLocaleString()} · 🌍</span></div>
+            <div className="facebook-post-info"><div className="facebook-post-name"><strong>{post.author.full_name}</strong>{post.author.badge_label === "Verified" ? <span className="feed-verified-badge" title="Verified"><BadgeCheck size={18} /><span>{language === "bn" ? "ভেরিফাইড" : "Verified"}</span></span> : post.author.badge_label ? <span className="status active">{post.author.badge_label}</span> : null}</div><span>{new Date(post.created_at).toLocaleString()} · 🌍</span></div>
             <div className="facebook-post-menu-wrap"><button type="button" className="facebook-more-button" aria-label="Post menu" onClick={() => setMenuFor(menuFor === post.id ? null : post.id)}><MoreHorizontal size={22} /></button>{menuFor === post.id && <div className="facebook-post-menu">{post.author_id === user?.id ? <button className="drawer-link danger" style={{ border: 0, background: "transparent", width: "100%" }} onClick={() => void deletePost(post)}><Trash2 size={17} />Delete</button> : <button className="drawer-link" style={{ border: 0, background: "transparent", width: "100%" }} onClick={() => void reportPost(post)}><Flag size={17} />Report</button>}</div>}</div>
           </div>
           {post.author_id !== user?.id && <button type="button" className="facebook-connect-button" onClick={() => void connect(post)} disabled={post.connection_status !== "none"}>{post.connection_status === "connected" ? <UsersRound size={16} /> : <UserPlus size={16} />}{post.connection_status === "connected" ? t("feed.connected") : post.connection_status === "pending" ? t("feed.pending") : t("feed.connect")}</button>}
