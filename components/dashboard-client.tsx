@@ -130,7 +130,7 @@ export function DashboardClient() {
   const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) { setError(true); setLoading(false); return; }
-    const [bannerResult, linksResult, projectsResult, marketplaceResult, productResult, earningsResult, jobsResult, ordersResult] = await Promise.all([
+    const [bannerResult, linksResult, projectsResult, marketplaceResult, productResult, earningsResult, jobsResult, ordersResult, campaignsResult] = await Promise.all([
       supabase.from("banners").select("id,title,image_url,destination_url,sort_order").eq("is_active", true).order("sort_order").limit(10),
       supabase.from("service_links").select("id,label_en,label_bn,icon_name,icon_url,destination_url,sort_order").eq("is_active", true).order("sort_order").limit(12),
       supabase.from("project_cards").select("id,title_en,title_bn,description_en,description_bn,image_url,icon_name,destination_url,sort_order").eq("is_active", true).order("sort_order").limit(24),
@@ -139,8 +139,9 @@ export function DashboardClient() {
       supabase.from("wallet_transactions").select("amount").gt("amount", 0),
       supabase.rpc("list_job_previews"),
       supabase.from("payment_orders").select("id", { count: "exact", head: true }),
+      supabase.from("service_campaigns").select("id", { count: "exact", head: true }),
     ]);
-    const failed = [bannerResult, linksResult, projectsResult, marketplaceResult, productResult, earningsResult, jobsResult, ordersResult].some((result) => result.error);
+    const failed = [bannerResult, linksResult, projectsResult, marketplaceResult, productResult, earningsResult, jobsResult, ordersResult, campaignsResult].some((result) => result.error);
     setError(failed);
     setBanners((bannerResult.data as Banner[]) ?? []);
     setLinks((linksResult.data as ServiceLink[]) ?? []);
@@ -150,7 +151,7 @@ export function DashboardClient() {
     setDashboardStats({
       earnings: ((earningsResult.data as Array<{ amount: number | string }> | null) ?? []).reduce((total, item) => total + Number(item.amount || 0), 0),
       activeJobs: Array.isArray(jobsResult.data) ? jobsResult.data.length : 0,
-      orders: ordersResult.count ?? 0,
+      orders: (ordersResult.count ?? 0) + (campaignsResult.count ?? 0),
     });
     setLoading(false);
   }, []);
@@ -243,19 +244,6 @@ export function DashboardClient() {
             {!isVerified && <button className="home-verify-button" onClick={() => setActivationOpen(true)}>{language === "bn" ? "আপনার অ্যাকাউন্ট এখনই ভেরিফাই করে নিন" : "Verify your account now"}</button>}
           </section>
 
-          <section className="home-marketplace" aria-label={language === "bn" ? "আমাদের সার্ভিস" : "Our services"}>
-            <div className="home-section-head"><div className="home-section-title"><span className="home-section-icon"><ShoppingBag size={20} /></span><div><h2>{language === "bn" ? "আমাদের সার্ভিস" : "Our Services"}</h2><small>{language === "bn" ? "Facebook, YouTube, TikTok, Instagram ও Telegram প্যাকেজ" : "Facebook, YouTube, TikTok, Instagram and Telegram packages"}</small></div></div><div className="home-live"><span />Live</div></div>
-            <div className="home-marketplace-platforms">
-              {marketplacePlatforms.map((platform) => <button type="button" key={platform} className={selectedMarketplacePlatform === platform ? "active" : ""} onClick={() => setSelectedMarketplacePlatform(platform)}><span><SocialBrandIcon brand={platform} /></span><strong>{marketplacePlatformLabels[platform]}</strong></button>)}
-            </div>
-            {loading ? <div className="home-marketplace-services">{[0,1].map((item) => <div className="skeleton home-marketplace-skeleton" key={item} />)}</div> : visibleMarketplaceServices.length > 0 ? <div className="home-marketplace-services">
-              {visibleMarketplaceServices.map((service) => <article className="home-marketplace-service" key={service.id}>
-                <div className="home-marketplace-service-image">{service.image_url ? <img src={service.image_url} alt="" loading="lazy" /> : <SocialBrandIcon brand={selectedMarketplacePlatform} />}</div>
-                <div className="home-marketplace-service-copy"><span>{service.service_type} · {service.quantity.toLocaleString()}</span><strong>{language === "bn" && service.name_bn ? service.name_bn : service.name_en}</strong>{service.delivery_note && <small>{service.delivery_note}</small>}<b>{formatMoney(Number(service.price), general.currency, language)}</b></div>
-              </article>)}
-            </div> : <div className="home-marketplace-empty">{language === "bn" ? `${marketplacePlatformLabels[selectedMarketplacePlatform]}-এর কোনো সার্ভিস এখনো যোগ করা হয়নি।` : `No ${marketplacePlatformLabels[selectedMarketplacePlatform]} services have been added yet.`}</div>}
-          </section>
-
           <section className="home-section home-reference-section home-official-section">
             <div className="home-section-head"><div className="home-section-title"><span className="home-section-icon"><Link2 size={20} /></span><div><h2>{language === "bn" ? "অফিসিয়াল এক্সেস পোর্টাল" : "Official access portal"}</h2><small>{language === "bn" ? "Facebook, Telegram, YouTube ও WhatsApp-এর অফিসিয়াল গ্রুপ লিংক" : "Official Facebook, Telegram, YouTube and WhatsApp links"}</small></div></div><div className="home-live"><span />Live</div></div>
             <div className="home-social-grid">{portalItems.map((item) => {
@@ -266,6 +254,19 @@ export function DashboardClient() {
                 ? <a key={item.key} className="home-social-card" href={link.destination_url} target="_blank" rel="noreferrer">{content}</a>
                 : <div key={item.key} className="home-social-card is-placeholder" aria-disabled="true">{content}</div>;
             })}</div>
+          </section>
+
+          <section className="home-marketplace" aria-label={language === "bn" ? "আমাদের সার্ভিস" : "Our services"}>
+            <div className="home-section-head"><div className="home-section-title"><span className="home-section-icon"><ShoppingBag size={20} /></span><div><h2>{language === "bn" ? "আমাদের সার্ভিস" : "Our Services"}</h2><small>{language === "bn" ? "Facebook, YouTube, TikTok, Instagram ও Telegram প্যাকেজ" : "Facebook, YouTube, TikTok, Instagram and Telegram packages"}</small></div></div><div className="home-live"><span />Live</div></div>
+            <div className="home-marketplace-platforms">
+              {marketplacePlatforms.map((platform) => <button type="button" key={platform} className={selectedMarketplacePlatform === platform ? "active" : ""} onClick={() => setSelectedMarketplacePlatform(platform)}><span><SocialBrandIcon brand={platform} /></span><strong>{marketplacePlatformLabels[platform]}</strong></button>)}
+            </div>
+            {loading ? <div className="home-marketplace-services">{[0,1].map((item) => <div className="skeleton home-marketplace-skeleton" key={item} />)}</div> : visibleMarketplaceServices.length > 0 ? <div className="home-marketplace-services">
+              {visibleMarketplaceServices.map((service) => <Link href={`/services/${service.id}`} className="home-marketplace-service" key={service.id}>
+                <div className="home-marketplace-service-image">{service.image_url ? <img src={service.image_url} alt="" loading="lazy" /> : <SocialBrandIcon brand={selectedMarketplacePlatform} />}</div>
+                <div className="home-marketplace-service-copy"><span>{service.service_type} · {service.quantity.toLocaleString()}</span><strong>{language === "bn" && service.name_bn ? service.name_bn : service.name_en}</strong>{service.delivery_note && <small>{service.delivery_note}</small>}<div className="home-marketplace-service-price"><b>{formatMoney(Number(service.price), general.currency, language)}</b><em>{language === "bn" ? "বিস্তারিত" : "Details"}<ChevronRight size={13} /></em></div></div>
+              </Link>)}
+            </div> : <div className="home-marketplace-empty">{language === "bn" ? `${marketplacePlatformLabels[selectedMarketplacePlatform]}-এর কোনো সার্ভিস এখনো যোগ করা হয়নি।` : `No ${marketplacePlatformLabels[selectedMarketplacePlatform]} services have been added yet.`}</div>}
           </section>
 
           <section className="home-storefront">

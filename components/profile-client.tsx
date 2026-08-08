@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, Camera, Check, CircleUserRound, Copy, KeyRound, Link2, LoaderCircle, Mail, Pencil, Phone, UserCheck, UserPlus, UserRound, UsersRound, WalletCards, X } from "lucide-react";
+import { Award, BadgeCheck, Camera, Check, CircleUserRound, Coins, Copy, Gauge, KeyRound, Link2, LoaderCircle, Mail, Pencil, Phone, ShoppingBag, UserCheck, UserPlus, UserRound, UsersRound, WalletCards, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
@@ -12,6 +12,8 @@ import type { PublicProfile } from "@/lib/types";
 
 interface ProfileConnection { id: string; requester_id: string; addressee_id: string; status: "pending" | "accepted" | "blocked"; }
 interface ProfilePost { id: string; body: string | null; created_at: string; }
+interface ActivitySummary { approved_jobs: number | string; campaigns: number | string; completed_campaigns: number | string; activity_score: number | string; level: number; next_level_score: number | null; level_floor: number; }
+interface ProfileCoinSummary { balance: number | string; referral_count: number; referral_reward: number; coins_per_currency_unit: number; minimum_exchange: number; }
 
 export function ProfileClient({ requestedUserId }: { requestedUserId?: string }) {
   const { t, language } = useI18n();
@@ -30,6 +32,8 @@ export function ProfileClient({ requestedUserId }: { requestedUserId?: string })
   const [editing, setEditing] = useState(false);
   const [connection, setConnection] = useState<ProfileConnection | null>(null);
   const [posts, setPosts] = useState<ProfilePost[]>([]);
+  const [activity, setActivity] = useState<ActivitySummary | null>(null);
+  const [coins, setCoins] = useState<ProfileCoinSummary | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -47,8 +51,14 @@ export function ProfileClient({ requestedUserId }: { requestedUserId?: string })
         setError(Boolean(profileResult.error || connectionResult.error || postsResult.error));
       } else {
         setShownProfile(profile); setName(profile?.full_name ?? ""); setBio(profile?.bio ?? ""); setEmail(user?.email ?? "");
-        const { data } = await supabase.from("user_private_profiles").select("mobile").eq("user_id", user?.id ?? "").maybeSingle();
-        setMobile(data?.mobile ?? "");
+        const [privateResult, activityResult, coinResult] = await Promise.all([
+          supabase.from("user_private_profiles").select("mobile").eq("user_id", user?.id ?? "").maybeSingle(),
+          supabase.rpc("get_my_activity_summary"),
+          supabase.rpc("get_coin_summary"),
+        ]);
+        setMobile(privateResult.data?.mobile ?? "");
+        setActivity((activityResult.data as ActivitySummary | null) ?? null);
+        setCoins((coinResult.data as ProfileCoinSummary | null) ?? null);
       }
       setLoading(false);
     }; void load();
@@ -95,6 +105,10 @@ export function ProfileClient({ requestedUserId }: { requestedUserId?: string })
   const customBadge = shownProfile?.badge_label && shownProfile.badge_label !== "Verified" ? shownProfile.badge_label : null;
   const verifiedText = language === "bn" ? "ভেরিফাইড" : "Verified";
   const unverifiedText = language === "bn" ? "ভেরিফাই করা হয়নি" : "Not verified";
+  const activityScore = Number(activity?.activity_score ?? 0);
+  const levelFloor = Number(activity?.level_floor ?? 0);
+  const nextLevelScore = activity?.next_level_score == null ? null : Number(activity.next_level_score);
+  const levelProgress = nextLevelScore == null ? 100 : Math.max(0, Math.min(100, Math.round(((activityScore - levelFloor) / Math.max(1, nextLevelScore - levelFloor)) * 100)));
 
   if (loading) return <AppShell><main className="profile-page"><div className="profile-container"><LoadingCards count={4} /></div></main></AppShell>;
   if (error || !shownProfile) return <AppShell><main className="profile-page"><div className="profile-container"><ErrorState message={t("common.error")} /></div></main></AppShell>;
@@ -141,9 +155,16 @@ export function ProfileClient({ requestedUserId }: { requestedUserId?: string })
       <button className="primary-button profile-save-button">{t("profile.update")}</button>
     </form>}
 
+    {isOwn && activity && <section className="profile-card profile-level-card">
+      <div className="profile-level-top"><div className="profile-level-medal"><Award size={27} /><span>LV</span><strong>{activity.level}</strong></div><div className="profile-level-copy"><small>{language === "bn" ? "TASKORA ACTIVITY LEVEL" : "TASKORA ACTIVITY LEVEL"}</small><h2>{language === "bn" ? `লেভেল ${activity.level}` : `Level ${activity.level}`}</h2><p>{nextLevelScore == null ? (language === "bn" ? "আপনি সর্বোচ্চ লেভেলে পৌঁছেছেন।" : "You reached the highest level.") : (language === "bn" ? `পরের লেভেলের জন্য ${Math.max(0, nextLevelScore - activityScore).toLocaleString()} activity বাকি` : `${Math.max(0, nextLevelScore - activityScore).toLocaleString()} activity to the next level`)}</p></div><strong className="profile-level-percent">{levelProgress}%</strong></div>
+      <div className="profile-level-progress"><span style={{ width: `${levelProgress}%` }} /></div>
+      <div className="profile-level-stats"><div><Gauge size={18} /><span><small>{language === "bn" ? "কাজ সম্পন্ন" : "Jobs done"}</small><strong>{Number(activity.approved_jobs).toLocaleString()}</strong></span></div><div><ShoppingBag size={18} /><span><small>{language === "bn" ? "ক্যাম্পেইন" : "Campaigns"}</small><strong>{Number(activity.campaigns).toLocaleString()}</strong></span></div><div><Coins size={18} /><span><small>{language === "bn" ? "কয়েন" : "Coins"}</small><strong>{Number(coins?.balance ?? 0).toLocaleString()}</strong></span></div></div>
+    </section>}
+
     <section className="profile-card profile-referral-card">
       <div className="profile-section-heading"><div className="profile-section-icon"><UsersRound size={20} /></div><div><h2>{t("profile.referral")}</h2><p>{language === "bn" ? "আপনার ইউনিক রেফারেল কোড" : "Your unique referral code"}</p></div></div>
       <div className="profile-referral-code"><strong>{shownProfile.referral_code}</strong></div>
+      {isOwn && coins && <div className="profile-referral-reward"><Coins size={18} /><span>{language === "bn" ? `প্রতি সফল রেফারে ${coins.referral_reward} কয়েন · মোট ${coins.referral_count} রেফার` : `${coins.referral_reward} coins per successful referral · ${coins.referral_count} total referrals`}</span></div>}
       {isOwn && <div className="profile-referral-actions"><button className="secondary-button" onClick={() => void navigator.clipboard.writeText(referralLink)}><Link2 size={18} />{t("profile.copyLink")}</button><button className="secondary-button" onClick={() => void navigator.clipboard.writeText(shownProfile.referral_code)}><Copy size={18} />{t("profile.copyCode")}</button></div>}
     </section>
 

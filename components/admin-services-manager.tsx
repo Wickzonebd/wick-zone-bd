@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit3, Plus, RefreshCw, ShoppingBag, ToggleLeft, ToggleRight, Trash2, UploadCloud, X } from "lucide-react";
+import { Ban, CheckCircle2, Edit3, ExternalLink, Play, Plus, RefreshCw, Save, ShoppingBag, ToggleLeft, ToggleRight, Trash2, UploadCloud, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { formatMoney } from "@/lib/money";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -21,6 +21,24 @@ interface MarketplaceService {
   sort_order: number;
   is_active: boolean;
   created_at: string;
+}
+
+interface ServiceCampaign {
+  id: string;
+  user_id: string;
+  service_name: string;
+  platform: string;
+  service_type: string;
+  target_url: string;
+  quantity: number;
+  delivered_count: number;
+  amount: number | string;
+  currency: string;
+  payment_status: string;
+  status: "pending" | "active" | "completed" | "cancelled";
+  admin_note: string | null;
+  created_at: string;
+  profile?: { full_name: string } | null;
 }
 
 const platforms = ["facebook", "instagram", "youtube", "tiktok", "telegram", "other"] as const;
@@ -52,6 +70,8 @@ const titleCase = (value: string) => value.replace(/(^|[-_\s])\w/g, (match) => m
 
 export function AdminServicesManager({ currency }: { currency: string }) {
   const [items, setItems] = useState<MarketplaceService[]>([]);
+  const [campaigns, setCampaigns] = useState<ServiceCampaign[]>([]);
+  const [campaignProgress, setCampaignProgress] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState(() => ({ ...emptyDraft }));
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -67,13 +87,20 @@ export function AdminServicesManager({ currency }: { currency: string }) {
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase
-      .from("marketplace_services")
-      .select("id,platform,service_type,name_en,name_bn,image_url,description_en,description_bn,quantity,price,delivery_note,sort_order,is_active,created_at")
-      .order("sort_order")
-      .order("created_at", { ascending: false });
-    if (error) setMessage({ type: "error", text: error.message });
-    setItems((data as MarketplaceService[]) ?? []);
+    const [serviceResult, campaignResult] = await Promise.all([
+      supabase.from("marketplace_services")
+        .select("id,platform,service_type,name_en,name_bn,image_url,description_en,description_bn,quantity,price,delivery_note,sort_order,is_active,created_at")
+        .order("sort_order").order("created_at", { ascending: false }),
+      supabase.from("service_campaigns")
+        .select("id,user_id,service_name,platform,service_type,target_url,quantity,delivered_count,amount,currency,payment_status,status,admin_note,created_at,profile:profiles!service_campaigns_user_id_fkey(full_name)")
+        .order("created_at", { ascending: false }).limit(100),
+    ]);
+    const firstError = serviceResult.error || campaignResult.error;
+    if (firstError) setMessage({ type: "error", text: firstError.message });
+    setItems((serviceResult.data as MarketplaceService[]) ?? []);
+    const nextCampaigns = (campaignResult.data as unknown as ServiceCampaign[]) ?? [];
+    setCampaigns(nextCampaigns);
+    setCampaignProgress(Object.fromEntries(nextCampaigns.map((campaign) => [campaign.id, String(campaign.delivered_count)])));
     setLoading(false);
   }, []);
 
@@ -180,6 +207,26 @@ export function AdminServicesManager({ currency }: { currency: string }) {
     }
   };
 
+  const updateCampaign = async (campaign: ServiceCampaign, status?: ServiceCampaign["status"], forceComplete = false) => {
+    const delivered = forceComplete ? campaign.quantity : Number(campaignProgress[campaign.id] ?? campaign.delivered_count);
+    if (!Number.isInteger(delivered) || delivered < 0 || delivered > campaign.quantity) {
+      setMessage({ type: "error", text: `Delivered count must be between 0 and ${campaign.quantity}.` });
+      return;
+    }
+    const nextStatus = status ?? (delivered >= campaign.quantity ? "completed" : delivered > 0 ? "active" : campaign.status);
+    const note = window.prompt("Admin note (optional):", campaign.admin_note ?? "") ?? campaign.admin_note;
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    const { error } = await supabase.rpc("admin_update_service_campaign", {
+      p_campaign_id: campaign.id,
+      p_delivered_count: delivered,
+      p_status: nextStatus,
+      p_note: note || null,
+    });
+    setMessage(error ? { type: "error", text: error.message } : { type: "success", text: "Campaign updated. The member will see the new progress live." });
+    if (!error) await load();
+  };
+
   return (
     <section className="admin-section admin-services">
       <div className="admin-section-head">
@@ -245,6 +292,20 @@ export function AdminServicesManager({ currency }: { currency: string }) {
           ))}
         </div>
       </div>
+
+      <section className="admin-campaign-panel">
+        <div className="admin-section-head"><div><span className="admin-kicker">LIVE FULFILLMENT</span><h2>Customer campaigns</h2><p>Confirm/start an order, enter how many units are delivered, and the customer&apos;s progress updates live. Completing a campaign automatically fills the full quantity.</p></div><span className="status active">{campaigns.filter((item) => item.status === "active").length} active</span></div>
+        {campaigns.length === 0 ? <div className="card admin-service-empty"><ShoppingBag size={28} /><strong>No campaigns yet</strong><span>Customer service orders will appear here.</span></div> : <div className="admin-campaign-list">{campaigns.map((campaign) => {
+          const percent = Math.min(100, Math.round((campaign.delivered_count / campaign.quantity) * 100));
+          const isFinal = campaign.status === "completed" || campaign.status === "cancelled";
+          return <article className={`card admin-campaign-card ${campaign.status}`} key={campaign.id}>
+            <div className="admin-campaign-card-top"><div><span className={`status ${campaign.status === "completed" ? "active" : campaign.status}`}>{campaign.status}</span><h3>{campaign.service_name}</h3><small>{campaign.profile?.full_name ?? campaign.user_id.slice(0, 8)} · {campaign.platform} {campaign.service_type}</small></div><strong>{formatMoney(Number(campaign.amount), campaign.currency || currency, "en")}</strong></div>
+            <a className="admin-campaign-target" href={campaign.target_url} target="_blank" rel="noreferrer"><ExternalLink size={13} />Open target</a>
+            <div className="admin-campaign-progress-head"><span>{campaign.delivered_count.toLocaleString()} / {campaign.quantity.toLocaleString()} delivered</span><strong>{percent}%</strong></div><div className="admin-campaign-progress"><span style={{ width: `${percent}%` }} /></div>
+            <div className="admin-campaign-controls"><div className="field"><label>Delivered</label><input className="input" type="number" min={0} max={campaign.quantity} step={1} disabled={isFinal} value={campaignProgress[campaign.id] ?? String(campaign.delivered_count)} onChange={(event) => setCampaignProgress((value) => ({ ...value, [campaign.id]: event.target.value }))} /></div><div className="admin-campaign-actions">{!isFinal && <><button type="button" className="secondary-button compact" onClick={() => void updateCampaign(campaign, campaign.status === "pending" ? "active" : undefined)}><Save size={15} />Save progress</button>{campaign.status === "pending" && <button type="button" className="primary-button compact" onClick={() => void updateCampaign(campaign, "active")}><Play size={15} />Confirm & Start</button>}<button type="button" className="primary-button compact" onClick={() => void updateCampaign(campaign, "completed", true)}><CheckCircle2 size={15} />Complete</button><button type="button" className="danger-button compact" onClick={() => void updateCampaign(campaign, "cancelled")}><Ban size={15} />Cancel</button></>}</div></div>
+          </article>;
+        })}</div>}
+      </section>
     </section>
   );
 }

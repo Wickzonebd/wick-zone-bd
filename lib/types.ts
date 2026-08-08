@@ -32,6 +32,9 @@ export interface SiteGeneralSettings {
   activationGateScope: string;
   memberBadgeWording: string;
   withdrawalMinimum: number;
+  referralRewardCoins: number;
+  coinsPerCurrencyUnit: number;
+  minimumCoinExchange: number;
   payoutMethods: string[];
   paymentGatewayStatus: "not_configured" | "configured";
   paymentPendingMessage: string;
