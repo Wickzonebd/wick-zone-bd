@@ -16,7 +16,7 @@ import type { JobPreview } from "@/lib/types";
 export function JobsClient() {
   const { t, language } = useI18n();
   const { general } = useSiteConfig();
-  const { membership } = useAuth();
+  const { membership, isAdmin } = useAuth();
   const [jobs, setJobs] = useState<JobPreview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -35,6 +35,7 @@ export function JobsClient() {
   }, []);
 
   const money = (value: number) => formatMoney(value, general.currency, language);
+  const hasJobAccess = isAdmin || membership?.status === "active";
 
   return (
     <AppShell variant="hub">
@@ -48,7 +49,7 @@ export function JobsClient() {
             <div className="micro-jobs-briefcase" aria-hidden="true"><BriefcaseBusiness size={22} /></div>
           </header>
 
-          {membership?.status !== "active" && <section className="micro-jobs-locked-card">
+          {!hasJobAccess && <section className="micro-jobs-locked-card">
             <div className="micro-jobs-lock-icon"><LockKeyhole size={26} /></div>
             <div className="micro-jobs-locked-content">
               <h2>{t("dashboard.lockedTitle")}</h2>
@@ -60,7 +61,7 @@ export function JobsClient() {
           {loading ? <LoadingCards count={6} /> : error ? <ErrorState message={t("common.error")} /> : !jobs.length ? <EmptyState message={t("jobs.empty")} /> : (
             <div className="micro-jobs-grid">
               {jobs.map((job) => (
-                <Link key={job.id} href={`/jobs/${job.id}`} className="micro-job-card" onClick={(event) => { if (membership?.status !== "active") { event.preventDefault(); setLockedOpen(true); } }}>
+                <Link key={job.id} href={`/jobs/${job.id}`} className="micro-job-card" onClick={(event) => { if (!hasJobAccess) { event.preventDefault(); setLockedOpen(true); } }}>
                   <div className="micro-job-thumb">
                     <span className="micro-job-code">{job.job_code}</span>
                     {job.thumbnail_url ? <img src={job.thumbnail_url} alt="" loading="lazy" /> : <div className="micro-job-placeholder"><ImageIcon size={20} /></div>}
