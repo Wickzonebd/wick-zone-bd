@@ -5,7 +5,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { SiteGeneralSettings, SupportSettings } from "@/lib/types";
 
 const defaultGeneral: SiteGeneralSettings = {
-  siteName: "Community Hub",
+  siteName: "Taskora",
   logoUrl: null,
   faviconUrl: null,
   primaryColor: "#FF4D1F",
