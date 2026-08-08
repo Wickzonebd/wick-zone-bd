@@ -78,7 +78,7 @@ interface DisplayRow {
 
 const contentKinds: Array<{ id: ContentKind; label: string; helper: string; icon: typeof Link2 }> = [
   { id: "service", label: "Portal Links", helper: "Official social & community links", icon: Link2 },
-  { id: "project", label: "Projects", helper: "Project & service cards", icon: Layers3 },
+  { id: "project", label: "Projects", helper: "Homepage project cards", icon: Layers3 },
   { id: "banner", label: "Banners", helper: "Home hero images", icon: PanelTopOpen },
   { id: "ticker", label: "Ticker", helper: "Scrolling announcements", icon: Megaphone },
   { id: "notification", label: "Broadcast", helper: "Notify all members", icon: BellRing },
@@ -188,7 +188,7 @@ export function AdminContentManager({ onChanged }: { onChanged?: () => Promise<v
       return;
     }
     if (kind === "service" && !destinationUrl.trim()) {
-      setMessage({ type: "error", text: "A destination URL is required for a service link." });
+      setMessage({ type: "error", text: "A destination URL is required for a portal link." });
       return;
     }
 
