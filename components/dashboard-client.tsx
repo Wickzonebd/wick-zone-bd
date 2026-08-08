@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Globe2, ImageIcon, Link2, Mail, MessageCircle, PackageOpen, Play, Send, ShieldCheck, ShoppingBag, ShoppingCart, Trophy, Zap } from "lucide-react";
+import { BriefcaseBusiness, ChevronRight, CircleDollarSign, ClipboardList, Globe2, ImageIcon, Link2, Mail, MessageCircle, PackageOpen, Play, Send, ShieldCheck, ShoppingBag, ShoppingCart, Trophy, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivationModal } from "@/components/activation-modal";
 import { AppShell } from "@/components/app-shell";
@@ -119,6 +119,7 @@ export function DashboardClient() {
   const [projects, setProjects] = useState<ProjectCard[]>([]);
   const [marketplaceServices, setMarketplaceServices] = useState<MarketplaceService[]>([]);
   const [homeProducts, setHomeProducts] = useState<HomeProduct[]>([]);
+  const [dashboardStats, setDashboardStats] = useState({ earnings: 0, activeJobs: 0, orders: 0 });
   const [selectedMarketplacePlatform, setSelectedMarketplacePlatform] = useState<MarketplacePlatform>("facebook");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -129,20 +130,28 @@ export function DashboardClient() {
   const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) { setError(true); setLoading(false); return; }
-    const [bannerResult, linksResult, projectsResult, marketplaceResult, productResult] = await Promise.all([
+    const [bannerResult, linksResult, projectsResult, marketplaceResult, productResult, earningsResult, jobsResult, ordersResult] = await Promise.all([
       supabase.from("banners").select("id,title,image_url,destination_url,sort_order").eq("is_active", true).order("sort_order").limit(10),
       supabase.from("service_links").select("id,label_en,label_bn,icon_name,icon_url,destination_url,sort_order").eq("is_active", true).order("sort_order").limit(12),
       supabase.from("project_cards").select("id,title_en,title_bn,description_en,description_bn,image_url,icon_name,destination_url,sort_order").eq("is_active", true).order("sort_order").limit(24),
       supabase.from("marketplace_services").select("id,platform,service_type,name_en,name_bn,image_url,quantity,price,delivery_note,sort_order").eq("is_active", true).order("sort_order").order("created_at", { ascending: false }),
       supabase.from("reselling_products").select("id,name_en,name_bn,image_url,price,compare_at_price,stock_count,is_featured").eq("is_active", true).order("is_featured", { ascending: false }).order("sort_order").order("created_at", { ascending: false }).limit(6),
+      supabase.from("wallet_transactions").select("amount").gt("amount", 0),
+      supabase.rpc("list_job_previews"),
+      supabase.from("payment_orders").select("id", { count: "exact", head: true }),
     ]);
-    const failed = [bannerResult, linksResult, projectsResult, marketplaceResult, productResult].some((result) => result.error);
+    const failed = [bannerResult, linksResult, projectsResult, marketplaceResult, productResult, earningsResult, jobsResult, ordersResult].some((result) => result.error);
     setError(failed);
     setBanners((bannerResult.data as Banner[]) ?? []);
     setLinks((linksResult.data as ServiceLink[]) ?? []);
     setProjects((projectsResult.data as ProjectCard[]) ?? []);
     setMarketplaceServices((marketplaceResult.data as MarketplaceService[]) ?? []);
     setHomeProducts((productResult.data as HomeProduct[]) ?? []);
+    setDashboardStats({
+      earnings: ((earningsResult.data as Array<{ amount: number | string }> | null) ?? []).reduce((total, item) => total + Number(item.amount || 0), 0),
+      activeJobs: Array.isArray(jobsResult.data) ? jobsResult.data.length : 0,
+      orders: ordersResult.count ?? 0,
+    });
     setLoading(false);
   }, []);
 
@@ -202,10 +211,25 @@ export function DashboardClient() {
             </div>
           )}
 
+          <section className="home-summary-grid" aria-label={language === "bn" ? "অ্যাকাউন্ট সামারি" : "Account summary"}>
+            <article className="home-summary-card earnings">
+              <span className="home-summary-icon"><CircleDollarSign size={21} /></span>
+              <div><small>{language === "bn" ? "মোট আয়" : "Total Earnings"}</small><strong>{formatMoney(dashboardStats.earnings, general.currency, language)}</strong></div>
+            </article>
+            <article className="home-summary-card jobs">
+              <span className="home-summary-icon"><BriefcaseBusiness size={21} /></span>
+              <div><small>{language === "bn" ? "চলমান কাজ" : "Active Jobs"}</small><strong>{dashboardStats.activeJobs.toLocaleString(language === "bn" ? "bn-BD" : "en")}</strong></div>
+            </article>
+            <article className="home-summary-card orders">
+              <span className="home-summary-icon"><ClipboardList size={21} /></span>
+              <div><small>{language === "bn" ? "অর্ডার" : "Orders"}</small><strong>{dashboardStats.orders.toLocaleString(language === "bn" ? "bn-BD" : "en")}</strong></div>
+            </article>
+          </section>
+
           <Link href="/ludo" className="home-ludo-feature">
             <span className="home-ludo-icon"><Trophy size={28} /></span>
             <span className="home-ludo-copy"><span>GAMING ZONE · NEW</span><strong>{language === "bn" ? "লুডু টুর্নামেন্ট" : "Ludo Tournament"}</strong><small>{language === "bn" ? "ম্যাচে যোগ দিন, খেলুন এবং পুরস্কার জিতুন" : "Join a match, play Ludo and win prizes"}</small></span>
-            <span className="home-ludo-arrow"><ChevronRight size={20} /></span>
+            <span className="home-ludo-cta">{language === "bn" ? "এখনই যোগ দিন" : "Join Now"}<ChevronRight size={16} /></span>
           </Link>
 
           {error && !loading && <div className="form-message error">{t("common.error")}</div>}
