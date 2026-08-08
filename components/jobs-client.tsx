@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BriefcaseBusiness, Clock3, ImageIcon, LockKeyhole } from "lucide-react";
+import { BriefcaseBusiness, ImageIcon, LockKeyhole } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ActivationModal } from "@/components/activation-modal";
 import { AppShell } from "@/components/app-shell";
@@ -37,23 +37,38 @@ export function JobsClient() {
   const money = (value: number) => formatMoney(value, general.currency, language);
 
   return (
-    <AppShell>
-      <main className="page-shell">
-        <div className="page-narrow" style={{ display: "grid", gap: 18 }}>
-          <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div><p className="muted" style={{ margin: 0 }}>{jobs.length} available</p><h1 className="section-title" style={{ fontSize: "2rem" }}>{t("jobs.title")}</h1></div>
-            <div className="quick-icon"><BriefcaseBusiness size={26} /></div>
+    <AppShell variant="hub">
+      <main className="micro-jobs-page">
+        <div className="micro-jobs-container">
+          <header className="micro-jobs-page-header">
+            <div>
+              <div className="micro-jobs-available">{jobs.length} available</div>
+              <h1>{t("jobs.title")}</h1>
+            </div>
+            <div className="micro-jobs-briefcase" aria-hidden="true"><BriefcaseBusiness size={22} /></div>
           </header>
-          {membership?.status !== "active" && <div className="activation-card"><div className="activation-row"><div className="activation-icon"><LockKeyhole /></div><div><strong>{t("dashboard.lockedTitle")}</strong><p className="muted" style={{ margin: "4px 0 10px" }}>{t("dashboard.lockedBody")}</p><button className="primary-button" onClick={() => setLockedOpen(true)}>{t("dashboard.activate")}</button></div></div></div>}
+
+          {membership?.status !== "active" && <section className="micro-jobs-locked-card">
+            <div className="micro-jobs-lock-icon"><LockKeyhole size={26} /></div>
+            <div className="micro-jobs-locked-content">
+              <h2>{t("dashboard.lockedTitle")}</h2>
+              <p>{t("dashboard.lockedBody")}</p>
+            </div>
+            <button className="micro-jobs-activate" onClick={() => setLockedOpen(true)}>{t("dashboard.activate")}</button>
+          </section>}
+
           {loading ? <LoadingCards count={6} /> : error ? <ErrorState message={t("common.error")} /> : !jobs.length ? <EmptyState message={t("jobs.empty")} /> : (
-            <div className="job-grid">
+            <div className="micro-jobs-grid">
               {jobs.map((job) => (
-                <Link key={job.id} href={`/jobs/${job.id}`} className="job-card" onClick={(event) => { if (membership?.status !== "active") { event.preventDefault(); setLockedOpen(true); } }}>
-                  <span className="job-code">{job.job_code}</span>
-                  {job.thumbnail_url ? <img className="job-thumb" src={job.thumbnail_url} alt="" loading="lazy" /> : <div className="job-thumb"><ImageIcon size={38} /></div>}
-                  <h2 className="job-title">{language === "bn" && job.title_bn ? job.title_bn : job.title_en}</h2>
-                  <div className="job-reward">{money(Number(job.reward))}</div>
-                  {job.deadline && <div className="muted" style={{ display: "flex", gap: 5, alignItems: "center", marginTop: 5, fontSize: ".76rem" }}><Clock3 size={13} />{new Date(job.deadline).toLocaleDateString()}</div>}
+                <Link key={job.id} href={`/jobs/${job.id}`} className="micro-job-card" onClick={(event) => { if (membership?.status !== "active") { event.preventDefault(); setLockedOpen(true); } }}>
+                  <div className="micro-job-thumb">
+                    <span className="micro-job-code">{job.job_code}</span>
+                    {job.thumbnail_url ? <img src={job.thumbnail_url} alt="" loading="lazy" /> : <div className="micro-job-placeholder"><ImageIcon size={20} /></div>}
+                  </div>
+                  <div className="micro-job-body">
+                    <h2>{language === "bn" && job.title_bn ? job.title_bn : job.title_en}</h2>
+                    <div className="micro-job-reward">{money(Number(job.reward))}</div>
+                  </div>
                 </Link>
               ))}
             </div>
