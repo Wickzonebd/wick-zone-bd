@@ -15,7 +15,7 @@ const latinFont = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Micro Job Community",
+  title: "WICK ZONE BD",
   description: "A bilingual community and micro-job platform.",
   other: { "codex-preview": "development" },
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
