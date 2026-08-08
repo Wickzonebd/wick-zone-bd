@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Globe2, ImageIcon, Link2, Mail, MessageCircle, Play, Send, ShieldCheck, ShoppingBag, ShoppingCart, Trophy, Zap } from "lucide-react";
+import { ChevronRight, Globe2, ImageIcon, Link2, Mail, MessageCircle, PackageOpen, Play, Send, ShieldCheck, ShoppingBag, ShoppingCart, Trophy, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivationModal } from "@/components/activation-modal";
 import { AppShell } from "@/components/app-shell";
@@ -28,6 +28,17 @@ interface MarketplaceService {
   price: number | string;
   delivery_note: string | null;
   sort_order: number;
+}
+
+interface HomeProduct {
+  id: string;
+  name_en: string;
+  name_bn: string | null;
+  image_url: string | null;
+  price: number | string;
+  compare_at_price: number | string | null;
+  stock_count: number | null;
+  is_featured: boolean;
 }
 
 const socialBrands: Record<SocialBrand, { color: string; path: string }> = {
@@ -107,6 +118,7 @@ export function DashboardClient() {
   const [links, setLinks] = useState<ServiceLink[]>([]);
   const [projects, setProjects] = useState<ProjectCard[]>([]);
   const [marketplaceServices, setMarketplaceServices] = useState<MarketplaceService[]>([]);
+  const [homeProducts, setHomeProducts] = useState<HomeProduct[]>([]);
   const [selectedMarketplacePlatform, setSelectedMarketplacePlatform] = useState<MarketplacePlatform>("facebook");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -117,18 +129,20 @@ export function DashboardClient() {
   const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) { setError(true); setLoading(false); return; }
-    const [bannerResult, linksResult, projectsResult, marketplaceResult] = await Promise.all([
+    const [bannerResult, linksResult, projectsResult, marketplaceResult, productResult] = await Promise.all([
       supabase.from("banners").select("id,title,image_url,destination_url,sort_order").eq("is_active", true).order("sort_order").limit(10),
       supabase.from("service_links").select("id,label_en,label_bn,icon_name,icon_url,destination_url,sort_order").eq("is_active", true).order("sort_order").limit(12),
       supabase.from("project_cards").select("id,title_en,title_bn,description_en,description_bn,image_url,icon_name,destination_url,sort_order").eq("is_active", true).order("sort_order").limit(24),
       supabase.from("marketplace_services").select("id,platform,service_type,name_en,name_bn,image_url,quantity,price,delivery_note,sort_order").eq("is_active", true).order("sort_order").order("created_at", { ascending: false }),
+      supabase.from("reselling_products").select("id,name_en,name_bn,image_url,price,compare_at_price,stock_count,is_featured").eq("is_active", true).order("is_featured", { ascending: false }).order("sort_order").order("created_at", { ascending: false }).limit(6),
     ]);
-    const failed = [bannerResult, linksResult, projectsResult, marketplaceResult].some((result) => result.error);
+    const failed = [bannerResult, linksResult, projectsResult, marketplaceResult, productResult].some((result) => result.error);
     setError(failed);
     setBanners((bannerResult.data as Banner[]) ?? []);
     setLinks((linksResult.data as ServiceLink[]) ?? []);
     setProjects((projectsResult.data as ProjectCard[]) ?? []);
     setMarketplaceServices((marketplaceResult.data as MarketplaceService[]) ?? []);
+    setHomeProducts((productResult.data as HomeProduct[]) ?? []);
     setLoading(false);
   }, []);
 
@@ -205,8 +219,8 @@ export function DashboardClient() {
             {!isVerified && <button className="home-verify-button" onClick={() => setActivationOpen(true)}>{language === "bn" ? "আপনার অ্যাকাউন্ট এখনই ভেরিফাই করে নিন" : "Verify your account now"}</button>}
           </section>
 
-          <section className="home-marketplace" aria-label={language === "bn" ? "সোশ্যাল মিডিয়া সার্ভিস" : "Social media services"}>
-            <div className="home-section-head"><div className="home-section-title"><span className="home-section-icon"><ShoppingBag size={20} /></span><div><h2>{language === "bn" ? "সোশ্যাল মিডিয়া সার্ভিস" : "Social Media Services"}</h2><small>{language === "bn" ? "প্ল্যাটফর্ম বেছে নিয়ে প্যাকেজ দেখুন" : "Choose a platform to see its packages"}</small></div></div><div className="home-live"><span />Live</div></div>
+          <section className="home-marketplace" aria-label={language === "bn" ? "আমাদের সার্ভিস" : "Our services"}>
+            <div className="home-section-head"><div className="home-section-title"><span className="home-section-icon"><ShoppingBag size={20} /></span><div><h2>{language === "bn" ? "আমাদের সার্ভিস" : "Our Services"}</h2><small>{language === "bn" ? "Facebook, YouTube, TikTok, Instagram ও Telegram প্যাকেজ" : "Facebook, YouTube, TikTok, Instagram and Telegram packages"}</small></div></div><div className="home-live"><span />Live</div></div>
             <div className="home-marketplace-platforms">
               {marketplacePlatforms.map((platform) => <button type="button" key={platform} className={selectedMarketplacePlatform === platform ? "active" : ""} onClick={() => setSelectedMarketplacePlatform(platform)}><span><SocialBrandIcon brand={platform} /></span><strong>{marketplacePlatformLabels[platform]}</strong></button>)}
             </div>
@@ -216,6 +230,19 @@ export function DashboardClient() {
                 <div className="home-marketplace-service-copy"><span>{service.service_type} · {service.quantity.toLocaleString()}</span><strong>{language === "bn" && service.name_bn ? service.name_bn : service.name_en}</strong>{service.delivery_note && <small>{service.delivery_note}</small>}<b>{formatMoney(Number(service.price), general.currency, language)}</b></div>
               </article>)}
             </div> : <div className="home-marketplace-empty">{language === "bn" ? `${marketplacePlatformLabels[selectedMarketplacePlatform]}-এর কোনো সার্ভিস এখনো যোগ করা হয়নি।` : `No ${marketplacePlatformLabels[selectedMarketplacePlatform]} services have been added yet.`}</div>}
+          </section>
+
+          <section className="home-storefront">
+            <div className="home-section-head"><div className="home-section-title"><span className="home-section-icon"><PackageOpen size={20} /></span><div><h2>{language === "bn" ? "আমাদের প্রোডাক্ট" : "Our Products"}</h2><small>{language === "bn" ? "রিসেলিং স্টোরের নতুন ও জনপ্রিয় প্রোডাক্ট" : "Featured and recent products from the Reselling store"}</small></div></div><Link href="/reselling" className="home-storefront-view-all">{language === "bn" ? "সব দেখুন" : "View all"}<ChevronRight size={15} /></Link></div>
+            {loading ? <div className="home-storefront-grid">{[0,1,2,3].map((item) => <div className="skeleton home-storefront-skeleton" key={item} />)}</div> : homeProducts.length ? <div className="home-storefront-grid">{homeProducts.map((product) => {
+              const price = Number(product.price);
+              const compare = product.compare_at_price == null ? null : Number(product.compare_at_price);
+              const discount = compare && compare > price ? Math.round((1 - price / compare) * 100) : 0;
+              return <Link href={`/reselling/${product.id}`} className="home-storefront-card" key={product.id}>
+                <div className="home-storefront-image">{product.image_url ? <img src={product.image_url} alt={language === "bn" && product.name_bn ? product.name_bn : product.name_en} loading="lazy" /> : <PackageOpen size={36} />}{product.is_featured && <span className="home-storefront-featured">{language === "bn" ? "জনপ্রিয়" : "Featured"}</span>}{discount > 0 && <b>-{discount}%</b>}</div>
+                <div className="home-storefront-copy"><h3>{language === "bn" && product.name_bn ? product.name_bn : product.name_en}</h3><div><strong>{formatMoney(price, general.currency, language)}</strong>{compare && compare > price && <del>{formatMoney(compare, general.currency, language)}</del>}</div><span className={product.stock_count === 0 ? "sold" : "available"}>{product.stock_count === 0 ? (language === "bn" ? "স্টক শেষ" : "Sold out") : (language === "bn" ? "বিস্তারিত দেখুন" : "View product")}</span></div>
+              </Link>;
+            })}</div> : <div className="home-marketplace-empty">{language === "bn" ? "রিসেলিং-এ এখনো কোনো প্রোডাক্ট প্রকাশ করা হয়নি।" : "No Reselling products have been published yet."}</div>}
           </section>
 
           <section className="home-section">

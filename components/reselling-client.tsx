@@ -6,8 +6,11 @@ import {
   ClipboardList,
   Heart,
   LayoutGrid,
+  PackageCheck,
   PackageOpen,
   Search,
+  ShoppingBag,
+  Sparkles,
   Store,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -150,7 +153,8 @@ export function ResellingClient() {
 
   return <AppShell variant="hub"><main className="reselling-page"><div className="reselling-container">
     <section className="reselling-top-card">
-      <div className="reselling-title-row"><div><span>Taskora</span><h1>{t("reselling.title")}</h1></div><Boxes size={30} /></div>
+      <div className="reselling-hero-intro"><div className="reselling-hero-copy"><span className="reselling-store-kicker"><Sparkles size={13} />{language === "bn" ? "ডিজিটাল মার্কেটপ্লেস" : "DIGITAL MARKETPLACE"}</span><h1>{general.siteName} <b>{language === "bn" ? "স্টোর" : "Store"}</b></h1><p>{language === "bn" ? "বিশ্বস্ত ভেন্ডরের প্রোডাক্ট, পরিষ্কার দাম ও সহজ অর্ডার—সব এক জায়গায়।" : "Products from listed vendors, clear pricing and an easy path to order—all in one storefront."}</p></div><div className="reselling-hero-art"><ShoppingBag size={34} /><span><Boxes size={18} /></span></div></div>
+      <div className="reselling-store-stats"><div><strong>{products.length}</strong><span>{language === "bn" ? "প্রোডাক্ট" : "Products"}</span></div><div><strong>{categories.length}</strong><span>{language === "bn" ? "ক্যাটাগরি" : "Categories"}</span></div><div><strong>{vendors.length}</strong><span>{language === "bn" ? "ভেন্ডর" : "Vendors"}</span></div></div>
       <div className="reselling-search"><Search size={21} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("reselling.search")} aria-label={t("reselling.search")} /></div>
     </section>
 
@@ -180,7 +184,10 @@ export function ResellingClient() {
           const category = product.category_id ? categoryById.get(product.category_id) : null;
           const vendor = product.vendor_id ? vendorById.get(product.vendor_id) : null;
           const saved = favorites.has(product.id);
-          return <article className="reselling-product-card" key={product.id}><Link href={`/reselling/${product.id}`} className="reselling-product-link"><div className="reselling-product-image">{product.image_url ? <img src={product.image_url} alt={localize(product.name_en, product.name_bn)} loading="lazy" /> : <PackageOpen size={40} />}{product.is_featured && <span className="reselling-featured">{t("reselling.featured")}</span>}</div><div className="reselling-product-body"><small>{vendor?.name || (category ? localize(category.name_en, category.name_bn) : "Taskora")}</small><h3>{localize(product.name_en, product.name_bn)}</h3><div className="reselling-product-price"><strong>{formatMoney(Number(product.price), general.currency, language)}</strong>{product.compare_at_price && Number(product.compare_at_price) > Number(product.price) && <del>{formatMoney(Number(product.compare_at_price), general.currency, language)}</del>}</div>{product.stock_count === 0 && <span className="reselling-sold-out">{t("reselling.soldOut")}</span>}</div></Link><button type="button" className={`reselling-favorite ${saved ? "saved" : ""}`} aria-label={t("reselling.favorites")} onClick={() => void toggleFavorite(product.id)}><Heart size={18} fill={saved ? "currentColor" : "none"} /></button></article>;
+          const price = Number(product.price);
+          const comparePrice = product.compare_at_price == null ? null : Number(product.compare_at_price);
+          const discount = comparePrice && comparePrice > price ? Math.round((1 - price / comparePrice) * 100) : 0;
+          return <article className="reselling-product-card" key={product.id}><Link href={`/reselling/${product.id}`} className="reselling-product-link"><div className="reselling-product-image">{product.image_url ? <img src={product.image_url} alt={localize(product.name_en, product.name_bn)} loading="lazy" /> : <PackageOpen size={40} />}{product.is_featured && <span className="reselling-featured">{t("reselling.featured")}</span>}{discount > 0 && <span className="reselling-discount">-{discount}%</span>}</div><div className="reselling-product-body"><small>{vendor?.name || (category ? localize(category.name_en, category.name_bn) : general.siteName)}</small><h3>{localize(product.name_en, product.name_bn)}</h3><div className="reselling-product-price"><strong>{formatMoney(price, general.currency, language)}</strong>{comparePrice && comparePrice > price && <del>{formatMoney(comparePrice, general.currency, language)}</del>}</div><div className={`reselling-product-availability ${product.stock_count === 0 ? "sold-out" : ""}`}><span><PackageCheck size={13} />{product.stock_count === 0 ? t("reselling.soldOut") : (language === "bn" ? "স্টকে আছে" : "In stock")}</span><b>{language === "bn" ? "বিস্তারিত" : "Details"} →</b></div></div></Link><button type="button" className={`reselling-favorite ${saved ? "saved" : ""}`} aria-label={t("reselling.favorites")} onClick={() => void toggleFavorite(product.id)}><Heart size={18} fill={saved ? "currentColor" : "none"} /></button></article>;
         })}</div> : <div className="reselling-empty-panel compact"><PackageOpen size={34} /><p>{view === "favorites" ? t("reselling.noFavorites") : t("reselling.noProducts")}</p>{view === "favorites" && <button type="button" className="primary-button compact" onClick={() => openShop()}>{t("reselling.browse")}</button>}</div>}
       </section>
     </>}

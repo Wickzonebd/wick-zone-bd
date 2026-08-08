@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { legalContentDefaults } from "@/lib/legal-content";
 import type { SiteGeneralSettings, SupportSettings } from "@/lib/types";
 
 const defaultGeneral: SiteGeneralSettings = {
@@ -21,7 +22,12 @@ const defaultGeneral: SiteGeneralSettings = {
   paymentGatewayStatus: "not_configured",
   paymentPendingMessage: "Payment gateway setup is currently pending. Please contact support.",
   generalNotice: "",
-  privacyContent: "",
+  aboutContent: legalContentDefaults.about.en,
+  aboutContentBn: legalContentDefaults.about.bn,
+  privacyContent: legalContentDefaults.privacy.en,
+  privacyContentBn: legalContentDefaults.privacy.bn,
+  termsContent: legalContentDefaults.terms.en,
+  termsContentBn: legalContentDefaults.terms.bn,
 };
 
 const defaultSupport: SupportSettings = {
@@ -32,6 +38,19 @@ const defaultSupport: SupportSettings = {
   phone: null,
   position: "right",
 };
+
+function mergeGeneralSettings(value?: Partial<SiteGeneralSettings>): SiteGeneralSettings {
+  const merged = { ...defaultGeneral, ...value };
+  return {
+    ...merged,
+    aboutContent: merged.aboutContent?.trim() ? merged.aboutContent : legalContentDefaults.about.en,
+    aboutContentBn: merged.aboutContentBn?.trim() ? merged.aboutContentBn : legalContentDefaults.about.bn,
+    privacyContent: merged.privacyContent?.trim() ? merged.privacyContent : legalContentDefaults.privacy.en,
+    privacyContentBn: merged.privacyContentBn?.trim() ? merged.privacyContentBn : legalContentDefaults.privacy.bn,
+    termsContent: merged.termsContent?.trim() ? merged.termsContent : legalContentDefaults.terms.en,
+    termsContentBn: merged.termsContentBn?.trim() ? merged.termsContentBn : legalContentDefaults.terms.bn,
+  };
+}
 
 interface SiteConfigValue {
   general: SiteGeneralSettings;
@@ -55,7 +74,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     }
     const { data } = await supabase.from("site_settings").select("key,value").in("key", ["general", "support"]);
     for (const row of data ?? []) {
-      if (row.key === "general") setGeneral({ ...defaultGeneral, ...(row.value as Partial<SiteGeneralSettings>) });
+      if (row.key === "general") setGeneral(mergeGeneralSettings(row.value as Partial<SiteGeneralSettings>));
       if (row.key === "support") setSupport({ ...defaultSupport, ...(row.value as Partial<SupportSettings>) });
     }
     setLoading(false);

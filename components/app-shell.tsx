@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft, BadgeCheck, Bell, BriefcaseBusiness, CircleUserRound, Home, Languages, LayoutDashboard, LogOut,
-  Menu, Network, Newspaper, ShoppingCart, ShieldCheck, Trophy, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound,
+  Menu, Network, Newspaper, ShoppingCart, ShieldCheck, Trophy, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound, Info, ScrollText,
   RotateCw, type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -155,7 +155,9 @@ export function AppShell({ children, variant = "default", hidePrimaryNav = false
                 })}
                 <div className="drawer-menu-divider" />
                 {support.enabled && supportHref && <a className="drawer-link" href={supportHref} target={supportHref.startsWith("http") ? "_blank" : undefined} rel={supportHref.startsWith("http") ? "noreferrer" : undefined}><LifeBuoy size={19} /><span>{t("common.support")}</span></a>}
+                <Link className={`drawer-link ${activePath === "/about" ? "active" : ""}`} href="/about" onClick={() => setDrawerOpen(false)}><Info size={19} /><span>{t("common.about")}</span></Link>
                 <Link className={`drawer-link ${activePath === "/privacy" ? "active" : ""}`} href="/privacy" onClick={() => setDrawerOpen(false)}><FileText size={19} /><span>{t("common.privacy")}</span></Link>
+                <Link className={`drawer-link ${activePath === "/terms" ? "active" : ""}`} href="/terms" onClick={() => setDrawerOpen(false)}><ScrollText size={19} /><span>{t("common.terms")}</span></Link>
                 <Link className={`drawer-link ${activePath === "/reset-password" ? "active" : ""}`} href="/reset-password" onClick={() => setDrawerOpen(false)}><KeyRound size={19} /><span>{t("profile.password")}</span></Link>
                 {isAdmin && <Link className={`drawer-link ${activePath.startsWith("/admin") ? "active" : ""}`} href="/admin-login" onClick={() => setDrawerOpen(false)}><ShieldCheck size={19} /><span>{t("common.admin")}</span></Link>}
                 <button className="drawer-link danger" style={{ border: 0, background: "transparent", width: "100%" }} onClick={async () => { await signOut(); router.replace("/login"); }}><LogOut size={21} />{t("common.logout")}</button>

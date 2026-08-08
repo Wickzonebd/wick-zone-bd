@@ -36,7 +36,12 @@ export interface SiteGeneralSettings {
   paymentGatewayStatus: "not_configured" | "configured";
   paymentPendingMessage: string;
   generalNotice: string;
+  aboutContent: string;
+  aboutContentBn: string;
   privacyContent: string;
+  privacyContentBn: string;
+  termsContent: string;
+  termsContentBn: string;
 }
 
 export interface SupportSettings {
