@@ -17,7 +17,8 @@
     "loading": "Loading...",
     "error": "Something went wrong. Please try again.",
     "language": "বাংলা",
-    "admin": "Admin Panel"
+    "admin": "Admin Panel",
+    "reselling": "Reselling"
   },
   "auth": {
     "loginTitle": "Sign in",
@@ -161,6 +162,30 @@
     "adjust": "Wallet adjustment",
     "suspend": "Suspend",
     "restore": "Restore",
-    "services": "Services"
+    "services": "Services",
+    "reselling": "Reselling"
+  },
+  "reselling": {
+    "title": "Reselling Shop",
+    "search": "Search products…",
+    "orders": "Orders",
+    "vendors": "Vendor List",
+    "categories": "Categories",
+    "favorites": "Favorites",
+    "popular": "Popular Products",
+    "all": "All",
+    "quickLinks": "Reselling shortcuts",
+    "emptyBanner": "Offers and banners published by the admin will appear here.",
+    "noOrders": "You do not have any reselling orders yet.",
+    "noVendors": "No vendors have been published yet.",
+    "noCategories": "No categories have been published yet.",
+    "noFavorites": "You have not saved any products yet.",
+    "noProducts": "No products match this view yet.",
+    "browse": "Browse products",
+    "allProducts": "All products",
+    "viewAll": "View all",
+    "clearFilter": "Clear filter",
+    "featured": "Featured",
+    "soldOut": "Sold out"
   }
 }
