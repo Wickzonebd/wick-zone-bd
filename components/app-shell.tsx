@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  BadgeCheck, Bell, BriefcaseBusiness, ChevronRight, CircleUserRound, Home, Languages, LayoutDashboard, LogOut,
+  ArrowLeft, BadgeCheck, Bell, BriefcaseBusiness, ChevronRight, CircleUserRound, Home, Languages, LayoutDashboard, LogOut,
   Menu, Network, Newspaper, ShieldCheck, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -31,7 +31,7 @@ const drawerNav = [
   { href: "/profile", label: "profile.update", icon: UserRoundCog },
 ];
 
-export function AppShell({ children, variant = "default" }: { children: React.ReactNode; variant?: "default" | "home" | "feed" }) {
+export function AppShell({ children, variant = "default" }: { children: React.ReactNode; variant?: "default" | "home" | "feed" | "hub" }) {
   const pathname = usePathname();
   const router = useRouter();
   const { t, language, toggleLanguage } = useI18n();
@@ -62,6 +62,7 @@ export function AppShell({ children, variant = "default" }: { children: React.Re
   const activePath = useMemo(() => (pathname === "/" ? "/dashboard" : pathname), [pathname]);
   const homeVariant = variant === "home";
   const feedVariant = variant === "feed";
+  const hubVariant = variant === "hub";
   const navItems = mainNav.map((item) => ({ href: item.href, icon: item.icon, text: t(item.label) }));
   const supportHref = isSafeExternalUrl(support.contactUrl)
     ? support.contactUrl
@@ -72,9 +73,21 @@ export function AppShell({ children, variant = "default" }: { children: React.Re
   }
 
   return (
-    <div className={`app-frame ${homeVariant ? "home-app-frame" : ""} ${feedVariant ? "feed-app-frame" : ""}`}>
-      {!feedVariant && <header className={`app-header ${homeVariant ? "home-app-header" : ""}`}>
-        <div className="header-inner">
+    <div className={`app-frame ${homeVariant ? "home-app-frame" : ""} ${feedVariant ? "feed-app-frame" : ""} ${hubVariant ? "hub-app-frame" : ""}`}>
+      {!feedVariant && <header className={`app-header ${homeVariant ? "home-app-header" : ""} ${hubVariant ? "hub-app-header" : ""}`}>
+        {hubVariant ? <div className="header-inner hub-header-inner">
+          <div className="hub-header-left">
+            <button className="icon-button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation"><Menu size={20} /></button>
+            <button className="icon-button" onClick={() => router.back()} aria-label="Go back"><ArrowLeft size={19} /></button>
+            <Link href="/dashboard" className="hub-header-title">{general.siteName}</Link>
+          </div>
+          <div className="header-actions">
+            <button className="icon-button" onClick={toggleLanguage} aria-label="Change language"><Languages size={18} /></button>
+            <Link href="/notifications" className="icon-button bell" aria-label="Notifications">
+              <Bell size={20} />{unread > 0 && <span className="unread-dot" />}
+            </Link>
+          </div>
+        </div> : <div className="header-inner">
           <button className="icon-button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation"><Menu /></button>
           <Link href="/dashboard" className={`brand ${homeVariant ? "home-brand" : ""}`} style={{ color: "inherit", textDecoration: "none" }}>
             {!homeVariant && (general.logoUrl ? <img src={general.logoUrl} alt="" className="brand-mark" /> : <div className="brand-fallback">{general.siteName.slice(0, 1).toUpperCase()}</div>)}
@@ -86,7 +99,7 @@ export function AppShell({ children, variant = "default" }: { children: React.Re
               <Bell size={23} />{unread > 0 && <span className="unread-dot" />}
             </Link>
           </div>
-        </div>
+        </div>}
       </header>}
 
       <nav className={`bottom-nav ${homeVariant ? "home-bottom-nav" : ""}`} aria-label="Primary navigation">
