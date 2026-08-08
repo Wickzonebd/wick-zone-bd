@@ -1,12 +1,14 @@
 "use client";
 
-import { BadgeCheck, ChevronDown, CircleUserRound, Flag, Link2, MessageCircle, MoreHorizontal, Send, Share2, ThumbsUp, Trash2, UserPlus, UsersRound } from "lucide-react";
+import { BadgeCheck, ChevronDown, CircleUserRound, Flag, Home, Link2, LoaderCircle, MessageCircle, MoreHorizontal, Send, Share2, ThumbsUp, Trash2, UserPlus, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
 import { useI18n } from "@/components/i18n-provider";
+import { useSiteConfig } from "@/components/site-config-provider";
 import { EmptyState, ErrorState, LoadingCards, Modal } from "@/components/ui";
+import { formatMoney } from "@/lib/money";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isSafeExternalUrl, safeFileName } from "@/lib/url";
 import type { FeedPost, PublicProfile } from "@/lib/types";
@@ -15,7 +17,8 @@ interface FeedComment { id: string; body: string; created_at: string; user_id: s
 
 export function FeedClient() {
   const { t, language } = useI18n();
-  const { user, profile } = useAuth();
+  const { user, profile, refresh } = useAuth();
+  const { general } = useSiteConfig();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -30,6 +33,8 @@ export function FeedClient() {
   const [composerOpen, setComposerOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [purchasingVerification, setPurchasingVerification] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
 
   const load = useCallback(async (reset = true, requestedPage = 0) => {
     const supabase = getSupabaseBrowserClient();
@@ -83,7 +88,7 @@ export function FeedClient() {
     setCommentsFor(post);
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
-    const { data } = await supabase.from("comments").select("id,body,created_at,user_id,author:profiles!comments_user_id_fkey(id,full_name,avatar_url,bio,badge_label,referral_code,created_at,is_suspended)").eq("post_id", post.id).eq("is_hidden", false).order("created_at");
+    const { data } = await supabase.from("comments").select("id,body,created_at,user_id,author:profiles!comments_user_id_fkey(id,full_name,avatar_url,bio,badge_label,is_social_verified,referral_code,created_at,is_suspended)").eq("post_id", post.id).eq("is_hidden", false).order("created_at");
     setComments((data as unknown as FeedComment[]) ?? []);
   };
 
@@ -131,14 +136,85 @@ export function FeedClient() {
     setMedia([]);
   };
 
+  const buyVerification = async () => {
+    if (!user || profile?.is_social_verified || purchasingVerification) return;
+    const price = Number(general.socialVerificationPrice ?? 0);
+    if (!Number.isFinite(price) || price <= 0) {
+      setVerificationMessage(language === "bn" ? "অ্যাডমিন এখনো Blue Badge-এর মূল্য সেট করেননি।" : "The admin has not set a Blue Badge price yet.");
+      return;
+    }
+    const confirmation = window.confirm(language === "bn"
+      ? `${formatMoney(price, general.currency, "bn")} Wallet থেকে দিয়ে Blue Badge কিনবেন?`
+      : `Buy the Blue Badge for ${formatMoney(price, general.currency, "en")} from your Wallet?`);
+    if (!confirmation) return;
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    setPurchasingVerification(true);
+    setVerificationMessage(null);
+    const { error: purchaseError } = await supabase.rpc("purchase_social_verification");
+    if (purchaseError) {
+      setVerificationMessage(purchaseError.message);
+    } else {
+      await refresh();
+      await load(true);
+      setVerificationMessage(language === "bn" ? "Blue Badge চালু হয়েছে।" : "Your Blue Badge is now active.");
+    }
+    setPurchasingVerification(false);
+  };
+
   const composerCopy = language === "bn"
     ? { live: "লাইভ", photo: "ফটো", feeling: "ফিলিং", title: "পোস্ট তৈরি করুন", you: "আপনি", public: "পাবলিক", link: "লিংক (ঐচ্ছিক)" }
     : { live: "Live", photo: "Photo", feeling: "Feeling", title: "Create post", you: "You", public: "Public", link: "Link (optional)" };
 
   const profileInitial = profile?.full_name?.trim().charAt(0).toUpperCase() || "আ";
+  const verificationPrice = Number(general.socialVerificationPrice ?? 0);
+  const verificationCopy = language === "bn"
+    ? {
+        eyebrow: "TASKORA SOCIAL",
+        title: "আপনার সোশ্যাল পরিচয়",
+        verified: "Blue Badge চালু আছে",
+        verifiedBody: "এই ব্যাজটি Social verification। Membership বা subscription-এর সাথে এর কোনো সম্পর্ক নেই।",
+        buyTitle: "Blue Badge নিন",
+        buyBody: "Blue Badge শুধু Social থেকে আলাদাভাবে কিনতে হয়। Subscription কিনলে এটি অটোমেটিক পাওয়া যাবে না।",
+        buy: "Blue Badge কিনুন",
+        notSet: "মূল্য সেট হয়নি",
+        wallet: "Wallet থেকে পেমেন্ট",
+        home: "হোম",
+        friends: "ফ্রেন্ডস",
+        profile: "প্রোফাইল",
+      }
+    : {
+        eyebrow: "TASKORA SOCIAL",
+        title: "Your social identity",
+        verified: "Blue Badge is active",
+        verifiedBody: "This is Social verification and is completely separate from membership or subscription.",
+        buyTitle: "Get the Blue Badge",
+        buyBody: "Blue Badge is purchased separately from Social. A subscription never grants it automatically.",
+        buy: "Buy Blue Badge",
+        notSet: "Price not set",
+        wallet: "Pay from Wallet",
+        home: "Home",
+        friends: "Friends",
+        profile: "Profile",
+      };
 
   return (
     <AppShell variant="feed"><main className="facebook-feed-main"><div className="facebook-feed-container">
+      <section className="taskora-social-header" aria-label={t("feed.title")}>
+        <div className="taskora-social-brand"><span className="taskora-social-mark">T</span><div><span>{verificationCopy.eyebrow}</span><strong>{t("feed.title")}</strong></div></div>
+        <nav className="taskora-social-shortcuts" aria-label={language === "bn" ? "সোশ্যাল নেভিগেশন" : "Social navigation"}>
+          <Link href="/" className="taskora-social-shortcut"><Home size={20} /><span>{verificationCopy.home}</span></Link>
+          <Link href="/network" className="taskora-social-shortcut"><UsersRound size={20} /><span>{verificationCopy.friends}</span></Link>
+          <Link href="/profile" className="taskora-social-shortcut"><CircleUserRound size={20} /><span>{verificationCopy.profile}</span></Link>
+        </nav>
+      </section>
+      <section className={`social-verify-card ${profile?.is_social_verified ? "verified" : ""}`}>
+        <div className="social-verify-icon"><BadgeCheck size={28} /></div>
+        <div className="social-verify-copy"><span>{verificationCopy.title}</span><strong>{profile?.is_social_verified ? verificationCopy.verified : verificationCopy.buyTitle}</strong><p>{profile?.is_social_verified ? verificationCopy.verifiedBody : verificationCopy.buyBody}</p></div>
+        {!profile?.is_social_verified && <button type="button" className="social-verify-button" onClick={() => void buyVerification()} disabled={purchasingVerification || verificationPrice <= 0}>{purchasingVerification ? <LoaderCircle size={18} className="spin" /> : <BadgeCheck size={18} />}<span>{verificationPrice > 0 ? `${verificationCopy.buy} · ${formatMoney(verificationPrice, general.currency, language)}` : verificationCopy.notSet}<small>{verificationCopy.wallet}</small></span></button>}
+        {profile?.is_social_verified && <span className="social-verified-state"><BadgeCheck size={18} />Verified</span>}
+      </section>
+      {verificationMessage && <div className="social-verify-message" role="status">{verificationMessage}</div>}
       <section className="facebook-create-post" aria-label={composerCopy.title}>
         <div className="facebook-create-top">
           <div className="facebook-avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : profileInitial}</div>
@@ -155,7 +231,7 @@ export function FeedClient() {
           {post.is_pinned && <div className="facebook-pinned">📌 {t("feed.pinned")}</div>}
           <div className="facebook-post-header">
             <Link href={`/profile?user=${post.author.id}`} className="facebook-avatar">{post.author.avatar_url ? <img src={post.author.avatar_url} alt="" /> : post.author.full_name?.trim().charAt(0).toUpperCase() || "M"}</Link>
-            <div className="facebook-post-info"><div className="facebook-post-name"><strong>{post.author.full_name}</strong>{post.author.badge_label === "Verified" ? <span className="feed-verified-badge" title="Verified"><BadgeCheck size={18} /><span>{language === "bn" ? "ভেরিফাইড" : "Verified"}</span></span> : post.author.badge_label ? <span className="status active">{post.author.badge_label}</span> : null}</div><span>{new Date(post.created_at).toLocaleString()} · 🌍</span></div>
+            <div className="facebook-post-info"><div className="facebook-post-name"><strong>{post.author.full_name}</strong>{post.author.is_social_verified ? <span className="feed-verified-badge" title="Verified"><BadgeCheck size={18} /><span>{language === "bn" ? "ভেরিফাইড" : "Verified"}</span></span> : post.author.badge_label && post.author.badge_label !== "Verified" ? <span className="status active">{post.author.badge_label}</span> : null}</div><span>{new Date(post.created_at).toLocaleString()} · 🌍</span></div>
             <div className="facebook-post-menu-wrap"><button type="button" className="facebook-more-button" aria-label="Post menu" onClick={() => setMenuFor(menuFor === post.id ? null : post.id)}><MoreHorizontal size={22} /></button>{menuFor === post.id && <div className="facebook-post-menu">{post.author_id === user?.id ? <button className="drawer-link danger" style={{ border: 0, background: "transparent", width: "100%" }} onClick={() => void deletePost(post)}><Trash2 size={17} />Delete</button> : <button className="drawer-link" style={{ border: 0, background: "transparent", width: "100%" }} onClick={() => void reportPost(post)}><Flag size={17} />Report</button>}</div>}</div>
           </div>
           {post.author_id !== user?.id && <button type="button" className="facebook-connect-button" onClick={() => void connect(post)} disabled={post.connection_status !== "none"}>{post.connection_status === "connected" ? <UsersRound size={16} /> : <UserPlus size={16} />}{post.connection_status === "connected" ? t("feed.connected") : post.connection_status === "pending" ? t("feed.pending") : t("feed.connect")}</button>}
@@ -177,7 +253,7 @@ export function FeedClient() {
       </div>
       <div className="facebook-composer-footer"><button className="facebook-post-button" disabled={publishing || (!body.trim() && !media.length && !externalUrl.trim())}>{publishing ? t("common.loading") : t("feed.publish")}</button></div>
     </form></div>}
-    {commentsFor && <Modal title={t("feed.comment")} onClose={() => setCommentsFor(null)}><div style={{ display: "grid", gap: 12, maxHeight: "50vh", overflow: "auto" }}>{comments.length ? comments.map((comment) => <div key={comment.id} className="soft-card" style={{ padding: 12, display: "grid", gridTemplateColumns: "38px 1fr auto", gap: 9 }}><div className="avatar" style={{ width: 38, height: 38 }}>{comment.author?.avatar_url ? <img src={comment.author.avatar_url} alt="" className="avatar" style={{ width: 38, height: 38 }} /> : <CircleUserRound size={20} />}</div><div><strong>{comment.author?.full_name ?? "Member"}</strong><div>{comment.body}</div><span className="muted" style={{ fontSize: ".72rem" }}>{new Date(comment.created_at).toLocaleString()}</span></div>{comment.user_id === user?.id && <button className="secondary-button" style={{ width: 38, minHeight: 38, padding: 0 }} onClick={async () => { const supabase = getSupabaseBrowserClient(); if (supabase) { await supabase.from("comments").delete().eq("id", comment.id); await openComments(commentsFor); } }}><Trash2 size={15} /></button>}</div>) : <p className="muted">No comments yet.</p>}</div><form onSubmit={addComment} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginTop: 14 }}><input className="input" value={commentBody} onChange={(event) => setCommentBody(event.target.value)} placeholder={t("feed.writeComment")} maxLength={2000} /><button className="primary-button" style={{ padding: "0 15px" }}><Send size={18} /></button></form></Modal>}
+    {commentsFor && <Modal title={t("feed.comment")} onClose={() => setCommentsFor(null)}><div style={{ display: "grid", gap: 12, maxHeight: "50vh", overflow: "auto" }}>{comments.length ? comments.map((comment) => <div key={comment.id} className="soft-card" style={{ padding: 12, display: "grid", gridTemplateColumns: "38px 1fr auto", gap: 9 }}><div className="avatar" style={{ width: 38, height: 38 }}>{comment.author?.avatar_url ? <img src={comment.author.avatar_url} alt="" className="avatar" style={{ width: 38, height: 38 }} /> : <CircleUserRound size={20} />}</div><div><span className="facebook-comment-author"><strong>{comment.author?.full_name ?? "Member"}</strong>{comment.author?.is_social_verified && <BadgeCheck size={16} aria-label="Verified" />}</span><div>{comment.body}</div><span className="muted" style={{ fontSize: ".72rem" }}>{new Date(comment.created_at).toLocaleString()}</span></div>{comment.user_id === user?.id && <button className="secondary-button" style={{ width: 38, minHeight: 38, padding: 0 }} onClick={async () => { const supabase = getSupabaseBrowserClient(); if (supabase) { await supabase.from("comments").delete().eq("id", comment.id); await openComments(commentsFor); } }}><Trash2 size={15} /></button>}</div>) : <p className="muted">No comments yet.</p>}</div><form onSubmit={addComment} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginTop: 14 }}><input className="input" value={commentBody} onChange={(event) => setCommentBody(event.target.value)} placeholder={t("feed.writeComment")} maxLength={2000} /><button className="primary-button" style={{ padding: "0 15px" }}><Send size={18} /></button></form></Modal>}
     </AppShell>
   );
 }
