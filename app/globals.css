@@ -884,8 +884,8 @@ img { max-width: 100%; }
 .taskora-wordmark { color:inherit; font-size:1.32rem; font-weight:900; letter-spacing:-.035em; line-height:1; }
 .auth-taskora-brand { justify-content:center; width:100%; margin:2px auto 18px; color:#1f2937; }
 .auth-taskora-brand .taskora-wordmark { font-size:1.72rem; }
-.brand .taskora-mark { color:#fff; filter:drop-shadow(0 5px 12px rgba(135,35,7,.16)); }
-.hub-taskora-mark { color:#fff; }
+.brand .taskora-mark { color:#1f2733; filter:drop-shadow(0 5px 12px rgba(135,35,7,.16)); }
+.hub-taskora-mark { color:#1f2733; }
 .drawer-close-row { display:flex; justify-content:flex-end; padding:12px; }
 .drawer-close-row .secondary-button { min-height:44px; width:44px; padding:0; }
 
