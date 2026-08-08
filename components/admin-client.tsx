@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, BadgeCheck, BriefcaseBusiness, Check, CircleDollarSign, FileCheck2, LayoutDashboard, LockKeyhole, Megaphone, Newspaper, Palette, Plus, RefreshCw, Search, Settings, ShieldCheck, Trash2, UsersRound, WalletCards, X } from "lucide-react";
+import { Activity, BadgeCheck, BriefcaseBusiness, Check, CircleDollarSign, FileCheck2, LayoutDashboard, LockKeyhole, Megaphone, Newspaper, Palette, Plus, RefreshCw, Search, Settings, ShieldCheck, Trash2, UserRound, UsersRound, WalletCards, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
@@ -34,9 +34,14 @@ const tabs: Array<{ id: AdminTab; key: string; icon: typeof LayoutDashboard }> =
   { id: "audit", key: "admin.audit", icon: Activity },
 ];
 
+const ADMIN_USERNAME = "admin";
+const ADMIN_AUTH_EMAIL = "fahimprivateuser@gmail.com";
+const ADMIN_LOGIN_ERROR = "Incorrect administrator credentials.";
+
 export function AdminClient() {
-  const { t } = useI18n(); const { isAdmin, loading: authLoading } = useAuth(); const { general, support, refresh: refreshConfig } = useSiteConfig();
+  const { t } = useI18n(); const { isAdmin, loading: authLoading, refresh: refreshAuth } = useAuth(); const { general, support, refresh: refreshConfig } = useSiteConfig();
   const [tab, setTab] = useState<AdminTab>("dashboard"); const [loading, setLoading] = useState(true); const [error, setError] = useState(false); const [message, setMessage] = useState<string | null>(null);
+  const [adminUsername, setAdminUsername] = useState(""); const [adminPassword, setAdminPassword] = useState(""); const [adminLoginError, setAdminLoginError] = useState<string | null>(null); const [adminSigningIn, setAdminSigningIn] = useState(false);
   const [stats, setStats] = useState<AdminStats | null>(null); const [users, setUsers] = useState<AdminUser[]>([]); const [jobs, setJobs] = useState<AdminJob[]>([]); const [proofs, setProofs] = useState<AdminProof[]>([]); const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]); const [posts, setPosts] = useState<AdminPost[]>([]); const [reports, setReports] = useState<AdminReport[]>([]); const [audit, setAudit] = useState<AuditRow[]>([]);
   const [search, setSearch] = useState(""); const [jobOpen, setJobOpen] = useState(false); const [jobDraft, setJobDraft] = useState({ code: "", titleEn: "", titleBn: "", shortEn: "", shortBn: "", instructionsEn: "", instructionsBn: "", category: "General", targetUrl: "", thumbnailUrl: "", instructionImageUrl: "", reward: "", maxSlots: "100", deadline: "", sortOrder: "0", allowResubmission: true, proofText: true, proofUrl: false, proofImages: true });
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -65,6 +70,30 @@ export function AdminClient() {
     return () => window.clearTimeout(timer);
   }, [load, search]);
   useEffect(() => { setSettingsDraft({ ...general, supportLabel: support.label, supportUrl: support.contactUrl ?? "", supportEnabled: support.enabled, supportPhone: support.phone ?? "", supportIconUrl: support.iconUrl ?? "", supportPosition: support.position }); }, [general, support]);
+
+  const adminSignIn = async (event: FormEvent) => {
+    event.preventDefault();
+    setAdminLoginError(null);
+    if (adminUsername.trim().toLowerCase() !== ADMIN_USERNAME) { setAdminLoginError(ADMIN_LOGIN_ERROR); return; }
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) { setAdminLoginError("Administrator login is temporarily unavailable."); return; }
+    setAdminSigningIn(true);
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: ADMIN_AUTH_EMAIL, password: adminPassword });
+      if (signInError || !data.user) throw new Error(ADMIN_LOGIN_ERROR);
+      const { data: role, error: roleError } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id).eq("role", "admin").maybeSingle();
+      if (roleError || !role) {
+        await supabase.auth.signOut();
+        throw new Error(ADMIN_LOGIN_ERROR);
+      }
+      setAdminPassword("");
+      await refreshAuth();
+    } catch {
+      setAdminLoginError(ADMIN_LOGIN_ERROR);
+    } finally {
+      setAdminSigningIn(false);
+    }
+  };
 
   const membershipAction = async (userId: string, active: boolean) => { const supabase = getSupabaseBrowserClient(); if (!supabase) return; const { error: actionError } = await supabase.rpc("admin_set_membership", { p_user_id: userId, p_active: active, p_reason: active ? "Manual admin activation" : "Manual admin deactivation" }); setMessage(actionError ? actionError.message : "Membership updated."); await load(); };
   const suspensionAction = async (item: AdminUser) => { const reason = window.prompt("Reason (required):")?.trim(); if (!reason) return; const supabase = getSupabaseBrowserClient(); if (!supabase) return; const { error: actionError } = await supabase.rpc("admin_set_user_suspension", { p_user_id: item.id, p_suspended: !item.is_suspended, p_reason: reason }); setMessage(actionError ? actionError.message : "User status updated."); await load(); };
@@ -100,7 +129,17 @@ export function AdminClient() {
   };
 
   if (authLoading) return <AppShell><main className="admin-shell"><LoadingCards count={5} /></main></AppShell>;
-  if (!isAdmin) return <AppShell><main className="admin-shell"><ErrorState message="Administrator access is required." /></main></AppShell>;
+  if (!isAdmin) return <main className="auth-page auth-page-login"><section className="auth-card">
+    <div className="auth-logo"><ShieldCheck size={36} /></div>
+    <h1 className="auth-title">Admin Login</h1>
+    <p className="auth-subtitle">Sign in to the {general.siteName} administration panel.</p>
+    <form className="auth-form" onSubmit={adminSignIn}>
+      <div className="field"><label>Admin username</label><div className="input-wrap"><UserRound size={20} /><input className="input with-icon" value={adminUsername} onChange={(event) => setAdminUsername(event.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} required /></div></div>
+      <div className="field"><label>Password</label><div className="input-wrap"><LockKeyhole size={20} /><input className="input with-icon" type="password" value={adminPassword} onChange={(event) => setAdminPassword(event.target.value)} autoComplete="current-password" required /></div></div>
+      {adminLoginError && <div className="form-message error" role="alert">{adminLoginError}</div>}
+      <button className="primary-button" type="submit" disabled={adminSigningIn}>{adminSigningIn ? "Signing in…" : "Login to Admin Panel"}</button>
+    </form>
+  </section></main>;
 
   return <AppShell><main className="admin-shell"><section className="admin-hero"><div style={{ display: "flex", gap: 12, alignItems: "center" }}><div className="quick-icon" style={{ background: "rgba(255,255,255,.11)", color: "white" }}><ShieldCheck /></div><div><h1 style={{ margin: 0, fontSize: "2rem" }}>{t("admin.title")}</h1><p style={{ margin: "4px 0 0", color: "#cbd3df" }}>{t("admin.subtitle")}</p></div></div></section>
     <div className="admin-tabs">{tabs.map(({ id, key, icon: Icon }) => <button key={id} className={`admin-tab ${tab === id ? "active" : ""}`} onClick={() => setTab(id)}><Icon size={17} style={{ display: "inline", marginRight: 6 }} />{t(key)}</button>)}</div>
