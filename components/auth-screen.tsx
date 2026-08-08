@@ -13,7 +13,7 @@ type Mode = "login" | "register" | "forgot" | "reset";
 
 export function AuthScreen({ mode }: { mode: Mode }) {
   const router = useRouter();
-  const { t, toggleLanguage } = useI18n();
+  const { t, toggleLanguage, language } = useI18n();
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -79,7 +79,17 @@ export function AuthScreen({ mode }: { mode: Mode }) {
       window.setTimeout(() => router.replace("/dashboard"), 900);
     } catch (error) {
       const raw = error instanceof Error ? error.message : "Request failed.";
-      const friendly = /invalid login credentials/i.test(raw) ? "The email or password is incorrect." : /already registered|duplicate|unique/i.test(raw) ? "An account already exists with these details." : raw;
+      const friendly = mode === "register" && /database error saving new user/i.test(raw)
+        ? language === "bn"
+          ? "এই মোবাইল নম্বরটি আগে থেকেই একটি অ্যাকাউন্টে ব্যবহার করা হয়েছে। আগের অ্যাকাউন্টে লগইন করুন অথবা অন্য মোবাইল নম্বর ব্যবহার করুন।"
+          : "This mobile number is already linked to an account. Sign in to the existing account or use another mobile number."
+        : /invalid login credentials/i.test(raw)
+          ? language === "bn" ? "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।" : "The email or password is incorrect."
+          : /email not confirmed/i.test(raw)
+            ? language === "bn" ? "ইমেইল এখনো নিশ্চিত করা হয়নি। ইমেইলের confirmation link দেখুন।" : "Your email is not confirmed yet. Check your email for the confirmation link."
+            : /already registered|duplicate|unique/i.test(raw)
+              ? language === "bn" ? "এই তথ্য দিয়ে আগে থেকেই একটি অ্যাকাউন্ট আছে।" : "An account already exists with these details."
+              : raw;
       setMessage({ type: "error", text: friendly });
     } finally {
       setSubmitting(false);
@@ -92,7 +102,7 @@ export function AuthScreen({ mode }: { mode: Mode }) {
   return (
     <main className={`auth-page auth-page-${mode}`}>
       <section className="auth-card">
-        <div style={{ display: "flex", justifyContent: "flex-end" }}><button className="secondary-button" style={{ minHeight: 42 }} onClick={toggleLanguage}><Languages size={17} />{t("common.language")}</button></div>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}><button className="secondary-button auth-language-toggle" onClick={toggleLanguage}><Languages size={17} />{t("common.language")}</button></div>
         <TaskoraLockup markSize={58} className="auth-taskora-brand" />
         <h1 className="auth-title">{title}</h1>
         <p className="auth-subtitle">{subtitle}</p>

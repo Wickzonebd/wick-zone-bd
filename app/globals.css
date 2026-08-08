@@ -393,6 +393,14 @@ img { max-width: 100%; }
     border-radius: 26px;
     padding: 22px 18px 26px;
   }
+  .auth-page-login .auth-language-toggle,
+  .auth-page-register .auth-language-toggle {
+    min-height: 36px;
+    padding: 0 11px;
+    border-radius: 12px;
+    gap: 6px;
+    font-size: .78rem;
+  }
   .auth-page-login .auth-logo,
   .auth-page-register .auth-logo {
     width: 64px;
@@ -416,6 +424,60 @@ img { max-width: 100%; }
   .auth-page-register .auth-footer { margin-top: 18px; }
   .auth-page-login .primary-button,
   .auth-page-register .primary-button { width: 100%; }
+
+  .auth-page-register .auth-card {
+    padding: 14px 14px 18px;
+    border-radius: 24px;
+  }
+  .auth-page-register .auth-taskora-brand {
+    margin: 0 auto 7px;
+    gap: 7px;
+  }
+  .auth-page-register .auth-taskora-brand .taskora-mark {
+    width: 42px;
+    height: 42px;
+  }
+  .auth-page-register .auth-taskora-brand .taskora-wordmark { font-size: 1.35rem; }
+  .auth-page-register .auth-title {
+    font-size: 1.65rem;
+    line-height: 1.08;
+  }
+  .auth-page-register .auth-subtitle {
+    margin: 5px 0 12px;
+    font-size: .82rem;
+    line-height: 1.3;
+  }
+  .auth-page-register .auth-form { gap: 9px; }
+  .auth-page-register .field { gap: 4px; }
+  .auth-page-register .field label {
+    font-size: .82rem;
+    line-height: 1.2;
+  }
+  .auth-page-register .input {
+    min-height: 50px;
+    border-radius: 15px;
+    font-size: .9rem;
+  }
+  .auth-page-register .input-wrap > svg {
+    left: 14px;
+    width: 18px;
+    height: 18px;
+  }
+  .auth-page-register .input.with-icon { padding-left: 43px; }
+  .auth-page-register .primary-button {
+    min-height: 48px;
+    border-radius: 15px;
+  }
+  .auth-page-register .form-message {
+    padding: 9px 11px;
+    border-radius: 12px;
+    font-size: .8rem;
+    line-height: 1.35;
+  }
+  .auth-page-register .auth-footer {
+    margin-top: 12px;
+    font-size: .84rem;
+  }
 }
 
 @media (min-width: 580px) {
