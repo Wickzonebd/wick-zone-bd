@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, Camera, Check, CircleUserRound, Copy, KeyRound, Link2, LoaderCircle, Mail, Phone, UserCheck, UserPlus, UserRound, UsersRound, X } from "lucide-react";
+import { BadgeCheck, Camera, Check, CircleUserRound, Copy, KeyRound, Link2, LoaderCircle, Mail, Phone, UserCheck, UserPlus, UserRound, UsersRound, WalletCards, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
@@ -138,6 +138,6 @@ export function ProfileClient({ requestedUserId }: { requestedUserId?: string })
     </section>
 
     {!isOwn && <section className="profile-posts-section"><h2 className="section-title">{t("profile.posts")}</h2><div className="profile-post-list">{posts.length ? posts.map((post) => <article key={post.id} className="profile-card profile-post-card"><p className="post-body">{post.body || t("profile.mediaPost")}</p><div className="muted profile-post-time">{new Date(post.created_at).toLocaleString()}</div></article>) : <div className="profile-card profile-empty-posts">{t("feed.empty")}</div>}</div></section>}
-    {isOwn && <a className="secondary-button profile-password-button" href="/reset-password"><KeyRound size={18} />{t("profile.password")}</a>}
+    {isOwn && <div className="profile-utility-actions"><a className="secondary-button" href="/wallet"><WalletCards size={18} />{t("common.wallet")}</a><a className="secondary-button profile-password-button" href="/reset-password"><KeyRound size={18} />{t("profile.password")}</a></div>}
   </div></main></AppShell>;
 }
