@@ -31,7 +31,7 @@ const drawerNav = [
   { href: "/profile", label: "profile.update", icon: UserRoundCog },
 ];
 
-export function AppShell({ children, variant = "default" }: { children: React.ReactNode; variant?: "default" | "home" | "feed" | "hub" }) {
+export function AppShell({ children, variant = "default", hidePrimaryNav = false }: { children: React.ReactNode; variant?: "default" | "home" | "feed" | "hub"; hidePrimaryNav?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const { t, language, toggleLanguage } = useI18n();
@@ -63,6 +63,7 @@ export function AppShell({ children, variant = "default" }: { children: React.Re
   const homeVariant = variant === "home";
   const feedVariant = variant === "feed";
   const hubVariant = variant === "hub";
+  const hasFullAccess = isAdmin || membership?.status === "active";
   const navItems = mainNav.map((item) => ({ href: item.href, icon: item.icon, text: t(item.label) }));
   const supportHref = isSafeExternalUrl(support.contactUrl)
     ? support.contactUrl
@@ -89,9 +90,9 @@ export function AppShell({ children, variant = "default" }: { children: React.Re
           </div>
         </div> : <div className="header-inner">
           <button className="icon-button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation"><Menu /></button>
-          <Link href="/dashboard" className={`brand ${homeVariant ? "home-brand" : ""}`} style={{ color: "inherit", textDecoration: "none" }}>
-            {!homeVariant && (general.logoUrl ? <img src={general.logoUrl} alt="" className="brand-mark" /> : <div className="brand-fallback">{general.siteName.slice(0, 1).toUpperCase()}</div>)}
-            <span className="brand-name">{homeVariant ? "WICK ZONE BD" : general.siteName}</span>
+          <Link href={hidePrimaryNav && isAdmin ? "/admin-login" : "/dashboard"} className={`brand ${homeVariant ? "home-brand" : ""}`} style={{ color: "inherit", textDecoration: "none" }}>
+            {!homeVariant && (hidePrimaryNav && isAdmin ? <div className="brand-fallback"><ShieldCheck size={20} /></div> : general.logoUrl ? <img src={general.logoUrl} alt="" className="brand-mark" /> : <div className="brand-fallback">{general.siteName.slice(0, 1).toUpperCase()}</div>)}
+            <span className="brand-name">{homeVariant ? "WICK ZONE BD" : hidePrimaryNav && isAdmin ? "Admin Control Center" : general.siteName}</span>
           </Link>
           <div className="header-actions">
             {!homeVariant && <button className="lang-pill" onClick={toggleLanguage} aria-label="Change language"><Languages size={17} /></button>}
@@ -102,18 +103,18 @@ export function AppShell({ children, variant = "default" }: { children: React.Re
         </div>}
       </header>}
 
-      <nav className={`bottom-nav ${homeVariant ? "home-bottom-nav" : ""}`} aria-label="Primary navigation">
+      {!hidePrimaryNav && <nav className={`bottom-nav ${homeVariant ? "home-bottom-nav" : ""}`} aria-label="Primary navigation">
         <div className="bottom-nav-inner">
           {navItems.map(({ href, text, icon: Icon }) => {
             const active = activePath === href || activePath.startsWith(`${href}/`);
             return <Link key={href} href={href} className={`nav-item ${active ? "active" : ""}`}>{href === "/profile" && profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="nav-profile-avatar" /> : <Icon size={22} />}<span>{text}</span></Link>;
           })}
         </div>
-      </nav>
+      </nav>}
 
       {children}
 
-      {support.enabled && supportHref && (
+      {!hidePrimaryNav && support.enabled && supportHref && (
         <a className={`support-fab ${homeVariant ? "home-support-fab" : ""}`} href={supportHref} target={supportHref.startsWith("http") ? "_blank" : undefined} rel={supportHref.startsWith("http") ? "noreferrer" : undefined} style={support.position === "left" ? { left: 16, right: "auto" } : { right: 16, left: "auto" }}>{support.iconUrl && isSafeExternalUrl(support.iconUrl) ? <img src={support.iconUrl} alt="" style={{ width: 21, height: 21, objectFit: "contain" }} /> : <LifeBuoy size={21} />}{homeVariant && language === "bn" ? "সাপোর্ট" : support.label || t("common.support")}</a>
       )}
 
@@ -123,9 +124,9 @@ export function AppShell({ children, variant = "default" }: { children: React.Re
             <div style={{ display: "flex", justifyContent: "flex-end", padding: 12 }}><button className="secondary-button" style={{ minHeight: 44, width: 44, padding: 0 }} onClick={() => setDrawerOpen(false)}><X size={20} /></button></div>
             <div className="drawer-profile">
               {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="drawer-avatar" /> : <div className="drawer-avatar"><CircleUserRound size={38} /></div>}
-              <h2 style={{ margin: 0, fontSize: "1.35rem", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>{profile?.full_name ?? user.email}{membership?.status === "active" && <BadgeCheck className="verified-check" size={20} aria-label="Verified" />}</h2>
-              <span className={`status ${membership?.status === "active" ? "active" : "pending"}`} style={{ marginTop: 9 }}>
-                {membership?.status === "active" ? <ShieldCheck size={14} /> : <LockKeyhole size={14} />}{membership?.status ?? "locked"}
+              <h2 style={{ margin: 0, fontSize: "1.35rem", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>{profile?.full_name ?? user.email}{hasFullAccess && <BadgeCheck className="verified-check" size={20} aria-label="Verified" />}</h2>
+              <span className={`status ${hasFullAccess ? "active" : "pending"}`} style={{ marginTop: 9 }}>
+                {hasFullAccess ? <ShieldCheck size={14} /> : <LockKeyhole size={14} />}{isAdmin ? "Administrator · Full access" : membership?.status ?? "locked"}
               </span>
             </div>
             <div className="drawer-menu">
