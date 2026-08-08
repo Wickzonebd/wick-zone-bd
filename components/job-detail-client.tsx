@@ -17,7 +17,7 @@ import type { JobDetail } from "@/lib/types";
 export function JobDetailClient({ jobId }: { jobId: string }) {
   const { t, language } = useI18n();
   const { general } = useSiteConfig();
-  const { user, membership } = useAuth();
+  const { user, membership, isAdmin } = useAuth();
   const [job, setJob] = useState<JobDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export function JobDetailClient({ jobId }: { jobId: string }) {
 
   useEffect(() => {
     const load = async () => {
-      if (membership?.status !== "active") { setLockedOpen(true); setLoading(false); return; }
+      if (!isAdmin && membership?.status !== "active") { setLockedOpen(true); setLoading(false); return; }
       const supabase = getSupabaseBrowserClient();
       if (!supabase) { setError(t("common.error")); setLoading(false); return; }
       const { data, error: queryError } = await supabase.rpc("get_job_details", { p_job_id: jobId });
@@ -41,7 +41,7 @@ export function JobDetailClient({ jobId }: { jobId: string }) {
       setLoading(false);
     };
     void load();
-  }, [jobId, membership?.status, t]);
+  }, [isAdmin, jobId, membership?.status, t]);
 
   const title = useMemo(() => !job ? "" : language === "bn" && job.title_bn ? job.title_bn : job.title_en, [job, language]);
   const instructions = useMemo(() => !job ? "" : language === "bn" && job.full_instructions_bn ? job.full_instructions_bn : job.full_instructions_en, [job, language]);
