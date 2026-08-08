@@ -69,7 +69,7 @@ const portalFallbackLabels: Record<SocialBrand, string> = {
 
 export function DashboardClient() {
   const { t, language } = useI18n();
-  const { membership } = useAuth();
+  const { membership, isAdmin } = useAuth();
   const [banners, setBanners] = useState<Banner[]>([]);
   const [links, setLinks] = useState<ServiceLink[]>([]);
   const [projects, setProjects] = useState<ProjectCard[]>([]);
@@ -104,7 +104,7 @@ export function DashboardClient() {
 
   const activeBanner = banners[slide];
   const bannerStyle = useMemo(() => activeBanner?.image_url ? { backgroundImage: `url(${activeBanner.image_url})` } : undefined, [activeBanner]);
-  const isVerified = membership?.status === "active";
+  const isVerified = isAdmin || membership?.status === "active";
   const portalItems = useMemo(() => {
     const claimed = new Set<string>();
     const preferred = preferredPortalBrands.map((brand) => {
