@@ -15,7 +15,7 @@ interface ProfilePost { id: string; body: string | null; created_at: string; }
 
 export function ProfileClient({ requestedUserId }: { requestedUserId?: string }) {
   const { t, language } = useI18n();
-  const { user, profile, membership, refresh } = useAuth();
+  const { user, profile, refresh } = useAuth();
   const isOwn = !requestedUserId || requestedUserId === user?.id;
   const [shownProfile, setShownProfile] = useState<PublicProfile | null>(profile);
   const [name, setName] = useState(profile?.full_name ?? "");
@@ -36,7 +36,7 @@ export function ProfileClient({ requestedUserId }: { requestedUserId?: string })
       const supabase = getSupabaseBrowserClient(); if (!supabase) { setError(true); setLoading(false); return; }
       if (requestedUserId && requestedUserId !== user?.id) {
         const [profileResult, connectionResult, postsResult] = await Promise.all([
-          supabase.from("profiles").select("id,full_name,avatar_url,bio,badge_label,referral_code,created_at,is_suspended").eq("id", requestedUserId).single(),
+          supabase.from("profiles").select("id,full_name,avatar_url,bio,badge_label,is_social_verified,referral_code,created_at,is_suspended").eq("id", requestedUserId).single(),
           supabase.from("connections").select("id,requester_id,addressee_id,status").or(`requester_id.eq.${requestedUserId},addressee_id.eq.${requestedUserId}`).limit(1).maybeSingle(),
           supabase.from("posts").select("id,body,created_at").eq("author_id", requestedUserId).eq("is_hidden", false).order("created_at", { ascending: false }).limit(20),
         ]);
@@ -90,7 +90,7 @@ export function ProfileClient({ requestedUserId }: { requestedUserId?: string })
   };
 
   const referralLink = typeof window === "undefined" || !shownProfile ? "" : `${window.location.origin}/register?ref=${shownProfile.referral_code}`;
-  const isVerified = shownProfile?.badge_label === "Verified" || (isOwn && membership?.status === "active");
+  const isVerified = Boolean(shownProfile?.is_social_verified);
   const customBadge = shownProfile?.badge_label && shownProfile.badge_label !== "Verified" ? shownProfile.badge_label : null;
   const verifiedText = language === "bn" ? "ভেরিফাইড" : "Verified";
   const unverifiedText = language === "bn" ? "ভেরিফাই করা হয়নি" : "Not verified";
