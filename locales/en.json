@@ -18,7 +18,8 @@
     "error": "Something went wrong. Please try again.",
     "language": "বাংলা",
     "admin": "Admin Panel",
-    "reselling": "Reselling"
+    "reselling": "Reselling",
+    "ludo": "Ludo"
   },
   "auth": {
     "loginTitle": "Sign in",
@@ -163,7 +164,8 @@
     "suspend": "Suspend",
     "restore": "Restore",
     "services": "Services",
-    "reselling": "Reselling"
+    "reselling": "Reselling",
+    "ludo": "Ludo Tournaments"
   },
   "reselling": {
     "title": "Reselling Shop",
@@ -187,5 +189,48 @@
     "clearFilter": "Clear filter",
     "featured": "Featured",
     "soldOut": "Sold out"
+  },
+  "ludo": {
+    "title": "Ludo Tournament",
+    "subtitle": "Play, compete and win with Ludo",
+    "balance": "Wallet balance",
+    "allMatches": "All Matches",
+    "myMatches": "My Matches",
+    "history": "History",
+    "playerMatch": "players",
+    "entryFee": "Entry fee",
+    "players": "Players",
+    "rules": "Match Rules",
+    "prize": "Prize",
+    "join": "Join Tournament",
+    "closed": "Closed",
+    "joined": "Joined",
+    "submitProof": "Submit Proof",
+    "pendingReview": "Pending Review",
+    "winner": "Winner",
+    "rejected": "Rejected",
+    "resubmitProof": "Resubmit Proof",
+    "waitingPlayers": "Waiting for players",
+    "joinConfirm": "Join this tournament for",
+    "joinSuccess": "Tournament joined successfully.",
+    "noTournaments": "No tournaments are open right now",
+    "noTournamentsBody": "New Ludo matches will appear here when the admin publishes them.",
+    "noMatches": "You have no active matches",
+    "noHistory": "No tournament history yet",
+    "browseHint": "Join a Ludo tournament from All Matches.",
+    "tournamentDetails": "TOURNAMENT DETAILS",
+    "description": "Description",
+    "gotIt": "Got it, close",
+    "submitWinProof": "Submit Win Proof",
+    "uploadWinningScreenshot": "UPLOAD YOUR WINNING SCREENSHOT",
+    "username": "Ludo username",
+    "usernamePlaceholder": "Your Ludo username",
+    "uploadScreenshot": "Upload screenshot",
+    "submitResult": "Submit Result",
+    "usernameRequired": "Enter your Ludo username.",
+    "screenshotRequired": "Choose a JPG, PNG or WebP screenshot up to 5MB.",
+    "proofAlreadySubmitted": "This proof is already waiting for review.",
+    "uploadFailed": "The screenshot could not be uploaded.",
+    "proofSubmitted": "Your win proof was submitted for admin review."
   }
 }
