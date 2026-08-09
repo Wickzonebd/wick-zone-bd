@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, ChevronDown, CircleUserRound, Flag, Home, Link2, LoaderCircle, MessageCircle, MoreHorizontal, Send, Share2, ThumbsUp, Trash2, UserPlus, UsersRound } from "lucide-react";
+import { BadgeCheck, Bell, Bookmark, ChevronDown, CircleUserRound, Eye, Flag, Home, Link2, LoaderCircle, MessageCircle, MoreHorizontal, Send, Share2, Sparkles, ThumbsUp, Trash2, UserPlus, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -14,6 +14,7 @@ import { isSafeExternalUrl, safeFileName } from "@/lib/url";
 import type { FeedPost, PublicProfile } from "@/lib/types";
 
 interface FeedComment { id: string; body: string; created_at: string; user_id: string; author: PublicProfile | null; }
+interface PeopleSuggestion extends PublicProfile { connection_status: "none" | "pending" | "connected"; mutual_count: number; }
 
 export function FeedClient() {
   const { t, language } = useI18n();
@@ -35,6 +36,7 @@ export function FeedClient() {
   const [hasMore, setHasMore] = useState(true);
   const [purchasingVerification, setPurchasingVerification] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<PeopleSuggestion[]>([]);
 
   const load = useCallback(async (reset = true, requestedPage = 0) => {
     const supabase = getSupabaseBrowserClient();
@@ -50,6 +52,14 @@ export function FeedClient() {
   }, []);
 
   useEffect(() => { void load(true); }, [load]);
+  useEffect(() => {
+    const loadPeople = async () => {
+      const supabase = getSupabaseBrowserClient(); if (!supabase) return;
+      const { data } = await supabase.rpc("list_people_suggestions", { p_limit: 10 });
+      setSuggestions((data as PeopleSuggestion[]) ?? []);
+    };
+    void loadPeople();
+  }, []);
 
   const publish = async (event: FormEvent) => {
     event.preventDefault();
@@ -106,6 +116,22 @@ export function FeedClient() {
     const supabase = getSupabaseBrowserClient(); if (!supabase) return;
     await supabase.rpc("send_connection_request", { p_addressee_id: post.author_id });
     await load(true);
+  };
+
+  const connectSuggestion = async (person: PeopleSuggestion) => {
+    if (person.connection_status !== "none") return;
+    const supabase = getSupabaseBrowserClient(); if (!supabase) return;
+    const { error: connectionError } = await supabase.rpc("send_connection_request", { p_addressee_id: person.id });
+    if (!connectionError) setSuggestions((current) => current.map((item) => item.id === person.id ? { ...item, connection_status: "pending" } : item));
+  };
+
+  const toggleBookmark = async (post: FeedPost) => {
+    if (!user) return;
+    const supabase = getSupabaseBrowserClient(); if (!supabase) return;
+    if (post.bookmarked_by_me) await supabase.from("post_bookmarks").delete().eq("post_id", post.id).eq("user_id", user.id);
+    else await supabase.from("post_bookmarks").insert({ post_id: post.id, user_id: user.id });
+    setPosts((current) => current.map((item) => item.id === post.id ? { ...item, bookmarked_by_me: !item.bookmarked_by_me } : item));
+    setMenuFor(null);
   };
 
   const share = async (post: FeedPost) => {
@@ -206,6 +232,7 @@ export function FeedClient() {
           <Link href="/" className="taskora-social-shortcut"><Home size={20} /><span>{verificationCopy.home}</span></Link>
           <Link href="/network" className="taskora-social-shortcut"><UsersRound size={20} /><span>{verificationCopy.friends}</span></Link>
           <Link href="/profile" className="taskora-social-shortcut"><CircleUserRound size={20} /><span>{verificationCopy.profile}</span></Link>
+          <Link href="/notifications" className="taskora-social-shortcut"><Bell size={20} /><span>{language === "bn" ? "ইনবক্স" : "Inbox"}</span></Link>
         </nav>
       </section>
       <section className={`social-verify-card ${profile?.is_social_verified ? "verified" : ""}`}>
@@ -215,6 +242,7 @@ export function FeedClient() {
         {profile?.is_social_verified && <span className="social-verified-state"><BadgeCheck size={18} />Verified</span>}
       </section>
       {verificationMessage && <div className="social-verify-message" role="status">{verificationMessage}</div>}
+      {suggestions.length > 0 && <section className="social-people-section"><div className="social-people-head"><div><Sparkles size={18} /><span>{language === "bn" ? "নতুন মানুষ খুঁজুন" : "Discover people"}</span></div><Link href="/network">{language === "bn" ? "সব কানেকশন" : "Your network"}</Link></div><div className="social-people-strip">{suggestions.map((person) => <article className="social-person-card" key={person.id}><Link href={`/profile?user=${person.id}`} className="social-person-avatar">{person.avatar_url ? <img src={person.avatar_url} alt="" /> : <CircleUserRound size={32} />}</Link><Link href={`/profile?user=${person.id}`} className="social-person-name"><strong>{person.full_name}{person.is_social_verified && <BadgeCheck size={15} />}</strong><span>{person.headline || person.bio || (language === "bn" ? "Taskora সদস্য" : "Taskora member")}</span><small>{person.mutual_count > 0 ? `${person.mutual_count} ${language === "bn" ? "মিউচুয়াল" : "mutual"}` : (person.location || (language === "bn" ? "নতুন সদস্য" : "New member"))}</small></Link><button type="button" disabled={person.connection_status !== "none"} onClick={() => void connectSuggestion(person)}>{person.connection_status === "none" ? <><UserPlus size={15} />{language === "bn" ? "কানেক্ট" : "Connect"}</> : person.connection_status === "pending" ? (language === "bn" ? "অপেক্ষমাণ" : "Pending") : (language === "bn" ? "কানেক্টেড" : "Connected")}</button></article>)}</div></section>}
       <section className="facebook-create-post" aria-label={composerCopy.title}>
         <div className="facebook-create-top">
           <div className="facebook-avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : profileInitial}</div>
@@ -232,7 +260,7 @@ export function FeedClient() {
           <div className="facebook-post-header">
             <Link href={`/profile?user=${post.author.id}`} className="facebook-avatar">{post.author.avatar_url ? <img src={post.author.avatar_url} alt="" /> : post.author.full_name?.trim().charAt(0).toUpperCase() || "M"}</Link>
             <div className="facebook-post-info"><div className="facebook-post-name"><strong>{post.author.full_name}</strong>{post.author.is_social_verified ? <span className="feed-verified-badge" title="Verified"><BadgeCheck size={18} /><span>{language === "bn" ? "ভেরিফাইড" : "Verified"}</span></span> : post.author.badge_label && post.author.badge_label !== "Verified" ? <span className="status active">{post.author.badge_label}</span> : null}</div><span>{new Date(post.created_at).toLocaleString()} · 🌍</span></div>
-            <div className="facebook-post-menu-wrap"><button type="button" className="facebook-more-button" aria-label="Post menu" onClick={() => setMenuFor(menuFor === post.id ? null : post.id)}><MoreHorizontal size={22} /></button>{menuFor === post.id && <div className="facebook-post-menu">{post.author_id === user?.id ? <button className="drawer-link danger" style={{ border: 0, background: "transparent", width: "100%" }} onClick={() => void deletePost(post)}><Trash2 size={17} />Delete</button> : <button className="drawer-link" style={{ border: 0, background: "transparent", width: "100%" }} onClick={() => void reportPost(post)}><Flag size={17} />Report</button>}</div>}</div>
+            <div className="facebook-post-menu-wrap"><button type="button" className="facebook-more-button" aria-label="Post menu" onClick={() => setMenuFor(menuFor === post.id ? null : post.id)}><MoreHorizontal size={22} /></button>{menuFor === post.id && <div className="facebook-post-menu"><Link className="drawer-link" href={`/profile?user=${post.author.id}`} onClick={() => setMenuFor(null)}><Eye size={17} />{language === "bn" ? "প্রোফাইল দেখুন" : "View profile"}</Link><button className="drawer-link" style={{ border: 0, background: "transparent", width: "100%" }} onClick={() => void toggleBookmark(post)}><Bookmark size={17} fill={post.bookmarked_by_me ? "currentColor" : "none"} />{post.bookmarked_by_me ? (language === "bn" ? "সেভ থেকে সরান" : "Remove saved") : (language === "bn" ? "পোস্ট সেভ করুন" : "Save post")}</button>{post.author_id === user?.id ? <button className="drawer-link danger" style={{ border: 0, background: "transparent", width: "100%" }} onClick={() => void deletePost(post)}><Trash2 size={17} />Delete</button> : <button className="drawer-link" style={{ border: 0, background: "transparent", width: "100%" }} onClick={() => void reportPost(post)}><Flag size={17} />Report</button>}</div>}</div>
           </div>
           {post.author_id !== user?.id && <button type="button" className="facebook-connect-button" onClick={() => void connect(post)} disabled={post.connection_status !== "none"}>{post.connection_status === "connected" ? <UsersRound size={16} /> : <UserPlus size={16} />}{post.connection_status === "connected" ? t("feed.connected") : post.connection_status === "pending" ? t("feed.pending") : t("feed.connect")}</button>}
           {post.body && <p className="facebook-post-content">{post.body}</p>}

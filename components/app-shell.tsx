@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft, BadgeCheck, Bell, BriefcaseBusiness, CircleUserRound, Home, Languages, LayoutDashboard, LogOut,
   Menu, Network, Newspaper, ShoppingCart, ShieldCheck, Trophy, UserRoundCog, WalletCards, X, LifeBuoy, LockKeyhole, FileText, KeyRound, Info, ScrollText,
+  MessageSquareText,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -30,7 +31,7 @@ const drawerNav = [
   { href: "/jobs", label: "common.jobs", icon: BriefcaseBusiness },
   { href: "/wallet", label: "common.wallet", icon: WalletCards },
   { href: "/network", label: "common.network", icon: Network },
-  { href: "/notifications", label: "common.notifications", icon: Bell },
+  { href: "/notifications", label: "common.inbox", icon: MessageSquareText },
   { href: "/profile", label: "profile.update", icon: UserRoundCog },
 ];
 

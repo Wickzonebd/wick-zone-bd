@@ -5,6 +5,10 @@ export interface PublicProfile {
   full_name: string;
   avatar_url: string | null;
   bio: string | null;
+  headline?: string | null;
+  location?: string | null;
+  website_url?: string | null;
+  cover_url?: string | null;
   badge_label: string | null;
   is_social_verified?: boolean;
   referral_code: string;
@@ -141,6 +145,7 @@ export interface FeedPost {
   like_count: number;
   comment_count: number;
   liked_by_me: boolean;
+  bookmarked_by_me?: boolean;
   connection_status?: "none" | "pending" | "connected";
 }
 
@@ -165,6 +170,10 @@ export interface AppNotification {
   title: string;
   body: string | null;
   destination_url: string | null;
+  broadcast_id?: string | null;
+  category?: "system" | "general" | "wallet" | "job" | "order" | "social" | "security" | "promotion";
+  priority?: "normal" | "important" | "urgent";
+  sender_label?: string;
   read_at: string | null;
   created_at: string;
 }

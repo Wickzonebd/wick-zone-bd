@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     const [profileResult, membershipResult, roleResult] = await Promise.all([
-      supabase.from("profiles").select("id,full_name,avatar_url,bio,badge_label,is_social_verified,referral_code,created_at,is_suspended").eq("id", nextUser.id).maybeSingle(),
+      supabase.from("profiles").select("id,full_name,avatar_url,bio,headline,location,website_url,cover_url,badge_label,is_social_verified,referral_code,created_at,is_suspended").eq("id", nextUser.id).maybeSingle(),
       supabase.from("memberships").select("user_id,status,activated_at,activation_source").eq("user_id", nextUser.id).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", nextUser.id).eq("role", "admin").maybeSingle(),
     ]);

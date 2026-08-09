@@ -1,10 +1,12 @@
 "use client";
 
-import { Activity, BadgeCheck, BriefcaseBusiness, Check, CircleDollarSign, FileCheck2, FileText, Gift, ImagePlus, LayoutDashboard, Link2, LockKeyhole, Megaphone, Newspaper, Palette, Plus, RefreshCw, Search, Settings, ShieldCheck, ShoppingBag, Sparkles, Store, Trash2, Trophy, UploadCloud, UserRound, UsersRound, WalletCards, X } from "lucide-react";
+import { Activity, BadgeCheck, BriefcaseBusiness, Check, CircleDollarSign, FileCheck2, FileText, Gift, ImagePlus, LayoutDashboard, Link2, LockKeyhole, Megaphone, MessageSquareText, Newspaper, Palette, Plus, RefreshCw, Search, Settings, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Store, Trash2, Trophy, UploadCloud, UserRound, UsersRound, WalletCards, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { AdminAccessPortalManager } from "@/components/admin-access-portal-manager";
 import { AdminContentManager } from "@/components/admin-content-manager";
 import { AdminLudoManager } from "@/components/admin-ludo-manager";
+import { AdminInboxManager } from "@/components/admin-inbox-manager";
+import { AdminOrdersManager } from "@/components/admin-orders-manager";
 import { AdminServicesManager } from "@/components/admin-services-manager";
 import { AdminResellingManager } from "@/components/admin-reselling-manager";
 import { AppShell } from "@/components/app-shell";
@@ -17,7 +19,7 @@ import { formatMoney } from "@/lib/money";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isSafeExternalUrl, safeFileName } from "@/lib/url";
 
-type AdminTab = "dashboard" | "users" | "access" | "services" | "reselling" | "ludo" | "jobs" | "proofs" | "withdrawals" | "posts" | "reports" | "content" | "settings" | "audit";
+type AdminTab = "dashboard" | "inbox" | "users" | "access" | "services" | "reselling" | "orders" | "ludo" | "jobs" | "proofs" | "withdrawals" | "posts" | "reports" | "content" | "settings" | "audit";
 interface AdminStats { total_users: number; activated_users: number; locked_users: number; active_jobs: number; pending_proofs: number; proofs_approved_today: number; wallet_liabilities: number; pending_withdrawals: number; total_posts: number; }
 interface AdminUser { id: string; full_name: string; mobile: string | null; badge_label: string | null; is_social_verified: boolean; is_suspended: boolean; membership_status: string; created_at: string; }
 interface AdminJob { id: string; job_code: string; title_en: string; category: string; thumbnail_url: string | null; instruction_image_url: string | null; reward: number; max_slots: number; completed_count: number; is_active: boolean; }
@@ -29,10 +31,12 @@ interface AuditRow { id: string; actor_id: string | null; action: string; target
 
 const tabs: Array<{ id: AdminTab; key: string; icon: typeof LayoutDashboard }> = [
   { id: "dashboard", key: "admin.title", icon: LayoutDashboard },
+  { id: "inbox", key: "admin.inbox", icon: MessageSquareText },
   { id: "users", key: "admin.users", icon: UsersRound },
   { id: "access", key: "admin.accessPortal", icon: Link2 },
   { id: "services", key: "admin.services", icon: ShoppingBag },
   { id: "reselling", key: "admin.reselling", icon: Store },
+  { id: "orders", key: "admin.orders", icon: ShoppingCart },
   { id: "ludo", key: "admin.ludo", icon: Trophy },
   { id: "jobs", key: "admin.jobs", icon: BriefcaseBusiness },
   { id: "proofs", key: "admin.proofs", icon: FileCheck2 },
@@ -248,9 +252,11 @@ export function AdminClient() {
         <button className="admin-command-card" onClick={() => { setJobError(null); setJobOpen(true); }}><span className="admin-command-icon"><BriefcaseBusiness size={21} /></span><strong>Create Micro Job</strong><small>Image, instructions, reward & auto payout</small></button>
         <button className="admin-command-card" onClick={() => setTab("proofs")}><span className="admin-command-icon"><FileCheck2 size={21} /></span><strong>Review Proofs</strong><small>Approve + pay, reject or request resubmit</small>{stats.pending_proofs > 0 && <span className="admin-command-count">{stats.pending_proofs}</span>}</button>
         <button className="admin-command-card" onClick={() => setTab("users")}><span className="admin-command-icon"><Gift size={21} /></span><strong>Gifts & Free Access</strong><small>Give a customer full access or wallet balance</small></button>
+        <button className="admin-command-card" onClick={() => setTab("inbox")}><span className="admin-command-icon"><MessageSquareText size={21} /></span><strong>Inbox Center</strong><small>Broadcast, target, prioritize & measure messages</small></button>
         <button className="admin-command-card" onClick={() => setTab("access")}><span className="admin-command-icon"><Link2 size={21} /></span><strong>Access Portal</strong><small>Official Facebook, Telegram, YouTube & WhatsApp links</small></button>
         <button className="admin-command-card" onClick={() => setTab("services")}><span className="admin-command-icon"><ShoppingBag size={21} /></span><strong>Social Services</strong><small>Facebook, Instagram, YouTube packages & pricing</small></button>
         <button className="admin-command-card" onClick={() => setTab("reselling")}><span className="admin-command-icon"><Store size={21} /></span><strong>Reselling Store</strong><small>Products, categories, vendors & banners</small></button>
+        <button className="admin-command-card" onClick={() => setTab("orders")}><span className="admin-command-icon"><ShoppingCart size={21} /></span><strong>Store Operations</strong><small>Orders, coupons, inventory & reviews</small></button>
         <button className="admin-command-card" onClick={() => setTab("ludo")}><span className="admin-command-icon"><Trophy size={21} /></span><strong>Ludo Tournaments</strong><small>Matches, rules, entry fees, prizes & win proofs</small></button>
         <button className="admin-command-card" onClick={() => setTab("withdrawals")}><span className="admin-command-icon"><WalletCards size={21} /></span><strong>Money Control</strong><small>Review withdrawals and member payouts</small></button>
         <button className="admin-command-card" onClick={() => setTab("settings")}><span className="admin-command-icon"><Settings size={21} /></span><strong>Site Settings</strong><small>Branding, fee, support and payout methods</small></button>
@@ -261,6 +267,7 @@ export function AdminClient() {
         <div className="table-wrap"><table className="data-table"><thead><tr><th>User</th><th>Mobile</th><th>Status</th><th>Joined</th><th>Admin controls</th></tr></thead><tbody>{users.map((item) => <tr key={item.id}><td><strong>{item.full_name}</strong><div className="muted">{item.badge_label && item.badge_label !== "Verified" ? item.badge_label : `ID ${item.id.slice(0,8)}`}</div></td><td>{item.mobile || "—"}</td><td><span className={`status ${item.membership_status}`}>{item.membership_status}</span> {item.is_social_verified && <span className="status admin-blue-badge"><BadgeCheck size={13} />Blue Badge</span>} {item.is_suspended && <span className="status rejected">Suspended</span>}</td><td>{new Date(item.created_at).toLocaleDateString()}</td><td>{item.id === user?.id ? <span className="status active"><ShieldCheck size={14} />System Admin · Free full access</span> : <div className="admin-row-actions">{item.membership_status === "active" ? <button className="secondary-button compact" onClick={() => void setMembershipAccess(item, false)}><LockKeyhole size={16} />Revoke access</button> : <button className="primary-button compact admin-gift-access" onClick={() => void setMembershipAccess(item, true)}><Gift size={16} />Gift full access</button>}<button className={item.is_social_verified ? "secondary-button compact admin-blue-badge-button" : "primary-button compact admin-blue-badge-button"} onClick={() => void socialVerificationAction(item)}><BadgeCheck size={16} />{item.is_social_verified ? "Revoke Blue Badge" : "Grant Blue Badge"}</button><button className="primary-button compact admin-gift-balance" onClick={() => void giftBalance(item)}><CircleDollarSign size={16} />Gift {general.currency}</button><button className="secondary-button compact" onClick={() => void badgeAction(item)}>Custom badge</button><button className="secondary-button compact" onClick={() => void walletAdjustment(item)}>{t("admin.adjust")}</button><button className={item.is_suspended ? "secondary-button compact" : "danger-button compact"} onClick={() => void suspensionAction(item)}>{item.is_suspended ? t("admin.restore") : t("admin.suspend")}</button><button className="danger-button compact admin-remove-user" onClick={() => void removeUser(item)}><Trash2 size={16} />Remove user</button></div>}</td></tr>)}</tbody></table></div>
         <p className="admin-footnote">Permanent removal requires typing DELETE and a reason. Admin accounts cannot remove themselves.</p>
       </section>}
+      {tab === "inbox" && <AdminInboxManager users={users} />}
       {tab === "jobs" && <section className="admin-section">
         <div className="admin-section-head"><div><span className="admin-kicker">EARNING ENGINE</span><h2>Micro Jobs</h2><p>Create jobs with feature/instruction images and define exactly how much one approved completion earns.</p></div><button className="primary-button" onClick={() => { setJobError(null); setJobOpen(true); }}><Plus size={18} />{t("admin.createJob")}</button></div>
         <div className="admin-reward-note"><Sparkles size={20} /><div><strong>Automatic reward is enabled</strong><span>When you approve a pending proof, the job reward is credited to that member wallet once. Duplicate approval cannot pay twice.</span></div></div>
@@ -273,6 +280,7 @@ export function AdminClient() {
       {tab === "access" && <AdminAccessPortalManager />}
       {tab === "services" && <AdminServicesManager currency={general.currency} />}
       {tab === "reselling" && <AdminResellingManager currency={general.currency} />}
+      {tab === "orders" && <AdminOrdersManager currency={general.currency} />}
       {tab === "ludo" && <AdminLudoManager currency={general.currency} />}
       {tab === "content" && <AdminContentManager />}
       {tab === "settings" && <form className="card admin-economy-settings" onSubmit={saveSettings}><div className="admin-section-head"><div><span className="admin-kicker">REFERRAL + COIN ECONOMY</span><h2>Coins & exchange</h2><p>Every successful referral earns coins. Members can exchange their coin balance into wallet money using the rate you set here.</p></div></div><div className="admin-form-grid three"><div className="field"><label>Coins per referral</label><input className="input" type="number" min={0} step={1} value={settingsDraft.referralRewardCoins} onChange={(event) => setSettingsDraft((value) => ({ ...value, referralRewardCoins: Number(event.target.value) }))} /></div><div className="field"><label>Coins = 1 {settingsDraft.currency}</label><input className="input" type="number" min={1} step={1} value={settingsDraft.coinsPerCurrencyUnit} onChange={(event) => setSettingsDraft((value) => ({ ...value, coinsPerCurrencyUnit: Number(event.target.value) }))} /></div><div className="field"><label>Minimum exchange coins</label><input className="input" type="number" min={1} step={1} value={settingsDraft.minimumCoinExchange} onChange={(event) => setSettingsDraft((value) => ({ ...value, minimumCoinExchange: Number(event.target.value) }))} /></div></div><div className="admin-economy-preview"><CircleDollarSign size={20} /><span><strong>{settingsDraft.referralRewardCoins} coins</strong> per referral · {settingsDraft.coinsPerCurrencyUnit} coins = 1 {settingsDraft.currency}</span></div><button className="primary-button"><Settings size={18} />{t("admin.save")}</button></form>}
