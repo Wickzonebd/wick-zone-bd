@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#FF6B00">
+  <meta name="description" content="Taskora premium mobile app home interface">
+  <title>Taskora — Premium Mobile Home</title>
+
+  <style>
+    /* ================================================================
+       Taskora premium mobile home — one-file HTML + CSS experience
+       ================================================================ */
+    :root {
+      --orange: #ff6b00;
+      --orange-deep: #e84d00;
+      --orange-soft: #fff1e6;
+      --canvas: #f7f8fa;
+      --surface: #ffffff;
+      --ink: #161b24;
+      --muted: #8b93a1;
+      --line: rgba(22, 27, 36, 0.07);
+      --green: #18a66a;
+      --green-soft: #eaf9f2;
+      --radius-xl: 24px;
+      --shadow-soft: 0 14px 36px rgba(31, 39, 54, 0.07);
+      --shadow-orange: 0 18px 40px rgba(255, 107, 0, 0.26);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-width: 320px;
+      background: #e9ebef;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: Inter, "SF Pro Display", "Hind Siliguri", -apple-system,
+        BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    svg {
+      display: block;
+    }
+
+    /* The centered shell keeps the page app-like on large screens. */
+    .app-shell {
+      position: relative;
+      width: min(100%, 430px);
+      min-height: 100dvh;
+      margin: 0 auto;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 92% 36%, rgba(255, 107, 0, 0.065), transparent 28%),
+        var(--canvas);
+    }
+
+    /* ------------------------ Gradient header ----------------------- */
+    .app-header {
+      position: relative;
+      min-height: 244px;
+      padding: calc(18px + env(safe-area-inset-top)) 20px 62px;
+      overflow: hidden;
+      color: #fff;
+      background:
+        radial-gradient(circle at 90% 10%, rgba(255, 255, 255, 0.22), transparent 24%),
+        linear-gradient(145deg, #ff8a00 0%, var(--orange) 48%, var(--orange-deep) 100%);
+      border-radius: 0 0 38px 38px;
+    }
+
+    .app-header::before,
+    .app-header::after {
+      content: "";
+      position: absolute;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .app-header::before {
+      width: 230px;
+      height: 230px;
+      right: -116px;
+      bottom: -110px;
+    }
+
+    .app-header::after {
+      width: 116px;
+      height: 116px;
+      right: -26px;
+      bottom: -35px;
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .header-bar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.32);
+      border-radius: 15px;
+      color: var(--orange);
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 10px 24px rgba(125, 42, 0, 0.18);
+      font-size: 1.28rem;
+      font-weight: 950;
+      letter-spacing: -0.08em;
+    }
+
+    .brand-copy strong,
+    .brand-copy span {
+      display: block;
+    }
+
+    .brand-copy strong {
+      font-size: 1.16rem;
+      line-height: 1;
+      letter-spacing: -0.035em;
+    }
+
+    .brand-copy span {
+      margin-top: 5px;
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .notification-button {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.13);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+
+    .notification-button::after {
+      content: "3";
+      position: absolute;
+      top: -4px;
+      right: -3px;
+      min-width: 19px;
+      height: 19px;
+      padding: 0 5px;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--orange);
+      border-radius: 999px;
+      color: #fff;
+      background: #202631;
+      font-size: 0.58rem;
+      font-weight: 900;
+    }
+
+    .welcome-copy {
+      position: relative;
+      z-index: 2;
+      margin-top: 35px;
+    }
+
+    .welcome-copy span {
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.75rem;
+      font-weight: 650;
+    }
+
+    .welcome-copy h1 {
+      max-width: 310px;
+      margin: 7px 0 0;
+      font-size: clamp(1.8rem, 8vw, 2.28rem);
+      line-height: 1.06;
+      letter-spacing: -0.055em;
+    }
+
+    /* ------------------------- Page content ------------------------- */
+    .page-content {
+      position: relative;
+      z-index: 3;
+      padding: 0 16px calc(122px + env(safe-area-inset-bottom));
+    }
+
+    /* Glass-tinted metric cards intentionally overlap the header. */
+    .metrics-grid {
+      margin-top: -47px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric-card {
+      position: relative;
+      min-width: 0;
+      min-height: 132px;
+      padding: 17px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      border-radius: var(--radius-xl);
+      background: rgba(255, 255, 255, 0.91);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .metric-card::after {
+      content: "";
+      position: absolute;
+      width: 78px;
+      height: 78px;
+      right: -30px;
+      bottom: -35px;
+      border-radius: 50%;
+      background: var(--orange-soft);
+    }
+
+    .metric-icon {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      color: var(--orange);
+      background: var(--orange-soft);
+    }
+
+    .metric-card.jobs .metric-icon {
+      color: #4a65d7;
+      background: #edf0ff;
+    }
+
+    .metric-card strong,
+    .metric-card small {
+      position: relative;
+      z-index: 1;
+      display: block;
+    }
+
+    .metric-card strong {
+      margin-top: 14px;
+      overflow: hidden;
+      font-size: clamp(1.45rem, 7vw, 1.85rem);
+      line-height: 1;
+      letter-spacing: -0.06em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .metric-card small {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 0.69rem;
+      font-weight: 680;
+    }
+
+    .section-block {
+      margin-top: 22px;
+    }
+
+    .section-heading {
+      margin-bottom: 12px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font-size: 1.03rem;
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+    }
+
+    .section-heading a {
+      color: var(--orange);
+      font-size: 0.67rem;
+      font-weight: 800;
+    }
+
+    /* ----------------------- Tournament banner ---------------------- */
+    .tournament-card {
+      position: relative;
+      min-height: 190px;
+      padding: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 28px;
+      color: #fff;
+      background:
+        radial-gradient(circle at 82% 28%, rgba(255, 107, 0, 0.36), transparent 33%),
+        linear-gradient(145deg, #242a35 0%, #11151c 72%);
+      box-shadow: 0 20px 42px rgba(19, 23, 31, 0.19);
+    }
+
+    .tournament-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.13;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+      background-size: 28px 28px;
+      -webkit-mask-image: linear-gradient(90deg, transparent 30%, #000);
+      mask-image: linear-gradient(90deg, transparent 30%, #000);
+    }
+
+    .tournament-content {
+      position: relative;
+      z-index: 2;
+      max-width: 230px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #ffb071;
+      font-size: 0.61rem;
+      font-weight: 850;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 0 5px rgba(255, 107, 0, 0.13);
+    }
+
+    .tournament-card h2 {
+      margin: 12px 0 6px;
+      font-size: 1.55rem;
+      line-height: 1;
+      letter-spacing: -0.045em;
+    }
+
+    .tournament-card p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.69rem;
+      line-height: 1.55;
+    }
+
+    .tournament-meta {
+      margin-top: 17px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .tournament-meta span {
+      padding: 7px 9px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 9px;
+      color: rgba(255, 255, 255, 0.76);
+      background: rgba(255, 255, 255, 0.055);
+      font-size: 0.6rem;
+      font-weight: 750;
+    }
+
+    .trophy-orbit {
+      position: absolute;
+      z-index: 2;
+      right: 17px;
+      top: 35px;
+      width: 102px;
+      height: 102px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 159, 88, 0.26);
+      border-radius: 50%;
+      color: #fff;
+      background: linear-gradient(145deg, rgba(255, 107, 0, 0.95), rgba(255, 139, 42, 0.65));
+      box-shadow: 0 18px 34px rgba(255, 107, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.32);
+      transform: rotate(7deg);
+    }
+
+    .trophy-orbit::after {
+      content: "";
+      position: absolute;
+      inset: -11px;
+      border: 1px dashed rgba(255, 147, 67, 0.31);
+      border-radius: inherit;
+    }
+
+    /* ---------------------- Verification status -------------------- */
+    .verified-card {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid rgba(24, 166, 106, 0.12);
+      border-radius: var(--radius-xl);
+      background: linear-gradient(135deg, #f6fffa 0%, var(--green-soft) 100%);
+      box-shadow: 0 12px 30px rgba(20, 129, 84, 0.075);
+    }
+
+    .verified-icon {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 15px;
+      color: #fff;
+      background: linear-gradient(145deg, #22bb7b, #10945c);
+      box-shadow: 0 10px 20px rgba(24, 166, 106, 0.2);
+    }
+
+    .verified-copy {
+      min-width: 0;
+    }
+
+    .verified-copy strong,
+    .verified-copy span {
+      display: block;
+    }
+
+    .verified-copy strong {
+      font-size: 0.84rem;
+      letter-spacing: -0.015em;
+    }
+
+    .verified-copy span {
+      margin-top: 4px;
+      overflow: hidden;
+      color: #5f8875;
+      font-size: 0.64rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .verified-badge {
+      padding: 6px 9px;
+      border-radius: 999px;
+      color: #0d8952;
+      background: rgba(255, 255, 255, 0.72);
+      font-size: 0.58rem;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    /* -------------------- Official access portal ------------------- */
+    .portal-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 11px;
+    }
+
+    .portal-card {
+      min-width: 0;
+      min-height: 91px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 21px;
+      background: rgba(255, 255, 255, 0.86);
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 9px 26px rgba(31, 39, 54, 0.055);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .portal-card:active {
+      transform: scale(0.975);
+    }
+
+    .portal-icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      color: #1877f2;
+      background: #eaf3ff;
+    }
+
+    .portal-card.telegram .portal-icon {
+      color: #229ed9;
+      background: #eaf8fe;
+    }
+
+    .portal-card.youtube .portal-icon {
+      color: #ff0033;
+      background: #ffedf1;
+    }
+
+    .portal-card.whatsapp .portal-icon {
+      color: #119f5b;
+      background: #e9f9f1;
+    }
+
+    .portal-card strong,
+    .portal-card span {
+      display: block;
+    }
+
+    .portal-card strong {
+      overflow: hidden;
+      font-size: 0.75rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .portal-card span {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 0.59rem;
+      font-weight: 650;
+    }
+
+    /* ---------------------- Floating bottom nav --------------------- */
+    .bottom-nav {
+      position: fixed;
+      z-index: 20;
+      left: 50%;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      width: min(calc(100% - 24px), 406px);
+      min-height: 76px;
+      padding: 9px 7px 7px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      align-items: end;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 25px;
+      background: rgba(255, 255, 255, 0.94);
+      -webkit-backdrop-filter: blur(24px);
+      backdrop-filter: blur(24px);
+      box-shadow: 0 20px 48px rgba(27, 34, 47, 0.16);
+      transform: translateX(-50%);
+    }
+
+    .nav-item {
+      min-width: 0;
+      height: 55px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      color: #9aa1ad;
+    }
+
+    .nav-item svg {
+      width: 20px;
+      height: 20px;
+      stroke-width: 2;
+    }
+
+    .nav-item span {
+      overflow: hidden;
+      max-width: 100%;
+      font-size: 0.56rem;
+      font-weight: 720;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .nav-item.active {
+      color: var(--orange);
+    }
+
+    .nav-item.center {
+      position: relative;
+      height: 72px;
+      margin-top: -31px;
+      color: #5d6572;
+    }
+
+    .nav-item.center .center-icon {
+      width: 58px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      border: 5px solid var(--canvas);
+      border-radius: 20px;
+      color: #fff;
+      background: linear-gradient(145deg, #ff8a00, var(--orange-deep));
+      box-shadow: var(--shadow-orange);
+      transform: rotate(45deg);
+    }
+
+    .nav-item.center .center-icon svg {
+      width: 24px;
+      height: 24px;
+      transform: rotate(-45deg);
+    }
+
+    .nav-item.center span {
+      margin-top: 2px;
+      color: var(--orange-deep);
+      font-weight: 850;
+    }
+
+    /* Desktop presentation: a subtle phone canvas without changing mobile. */
+    @media (min-width: 520px) {
+      body {
+        padding: 22px 0;
+      }
+
+      .app-shell {
+        min-height: calc(100dvh - 44px);
+        border: 1px solid rgba(20, 27, 38, 0.07);
+        border-radius: 36px;
+        box-shadow: 0 28px 80px rgba(35, 42, 55, 0.16);
+      }
+
+      .app-header {
+        border-radius: 36px 36px 38px 38px;
+      }
+
+      .bottom-nav {
+        bottom: 36px;
+      }
+    }
+
+    @media (max-width: 355px) {
+      .app-header {
+        padding-inline: 16px;
+      }
+
+      .page-content {
+        padding-inline: 12px;
+      }
+
+      .metric-card {
+        padding: 14px;
+      }
+
+      .trophy-orbit {
+        right: 10px;
+        width: 88px;
+        height: 88px;
+      }
+
+      .portal-grid {
+        gap: 8px;
+      }
+
+      .portal-card {
+        padding: 11px;
+        grid-template-columns: 36px minmax(0, 1fr);
+      }
+
+      .portal-icon {
+        width: 36px;
+        height: 36px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <!-- 1. Premium orange gradient header -->
+    <header class="app-header">
+      <div class="header-bar">
+        <a class="brand" href="#" aria-label="Taskora home">
+          <span class="brand-mark" aria-hidden="true">T</span>
+          <span class="brand-copy">
+            <strong>Taskora</strong>
+            <span>Work · Earn · Grow</span>
+          </span>
+        </a>
+
+        <a class="notification-button" href="/notifications" aria-label="Open notifications">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+            <path d="M10 21h4"></path>
+          </svg>
+        </a>
+      </div>
+
+      <div class="welcome-copy">
+        <span>Good morning, Fahim 👋</span>
+        <h1>Ready to build your next win?</h1>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <!-- 2. Side-by-side account metrics -->
+      <section class="metrics-grid" aria-label="Account overview">
+        <article class="metric-card earnings">
+          <span class="metric-icon" aria-hidden="true">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="14" x="2" y="5" rx="3"></rect>
+              <path d="M16 13a2 2 0 1 0 0-4"></path>
+              <path d="M6 9h.01M6 13h.01"></path>
+            </svg>
+          </span>
+          <strong>৳12,840</strong>
+          <small>Total Earnings</small>
+        </article>
+
+        <article class="metric-card jobs">
+          <span class="metric-icon" aria-hidden="true">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="14" x="2" y="7" rx="2"></rect>
+              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M12 12v.01"></path>
+              <path d="M2 12a18 18 0 0 0 20 0"></path>
+            </svg>
+          </span>
+          <strong>08</strong>
+          <small>Active Jobs</small>
+        </article>
+      </section>
+
+      <!-- 3. Dark Ludo tournament campaign card -->
+      <section class="section-block" aria-labelledby="tournament-title">
+        <a class="tournament-card" href="/ludo">
+          <div class="tournament-content">
+            <span class="eyebrow">Live competition</span>
+            <h2 id="tournament-title">Ludo Tournament</h2>
+            <p>Play smart, climb the leaderboard and win the weekly prize pool.</p>
+            <div class="tournament-meta">
+              <span>Prize ৳10,000</span>
+              <span>64 Players</span>
+            </div>
+          </div>
+
+          <span class="trophy-orbit" aria-hidden="true">
+            <svg width="47" height="47" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 21h8M12 17v4"></path>
+              <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"></path>
+              <path d="M7 6H4v1a4 4 0 0 0 4 4M17 6h3v1a4 4 0 0 1-4 4"></path>
+            </svg>
+          </span>
+        </a>
+      </section>
+
+      <!-- 4. Verified account status -->
+      <section class="section-block">
+        <article class="verified-card">
+          <span class="verified-icon" aria-hidden="true">
+            <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path>
+              <path d="m9 12 2 2 4-4"></path>
+            </svg>
+          </span>
+          <span class="verified-copy">
+            <strong>Verified Account</strong>
+            <span>Your identity and earning profile are protected.</span>
+          </span>
+          <span class="verified-badge">Active</span>
+        </article>
+      </section>
+
+      <!-- 5. Official community and support access portal -->
+      <section class="section-block" aria-labelledby="portal-title">
+        <div class="section-heading">
+          <h2 id="portal-title">Official Access Portal</h2>
+          <a href="#portal-title">View all</a>
+        </div>
+
+        <div class="portal-grid">
+          <a class="portal-card facebook" href="#">
+            <span class="portal-icon" aria-hidden="true">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M13.7 22v-8h2.7l.4-3.1h-3.1V8.9c0-.9.3-1.5 1.6-1.5H17V4.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7.5V14h2.8v8h3.4Z"></path>
+              </svg>
+            </span>
+            <span><strong>Facebook</strong><span>Official community</span></span>
+          </a>
+
+          <a class="portal-card telegram" href="#">
+            <span class="portal-icon" aria-hidden="true">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor">
+                <path d="m21.4 3.4-3.2 15.1c-.2 1.1-.9 1.4-1.8.9l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L5.8 12.3.9 10.8c-1.1-.3-1.1-1.1.2-1.6L20 2c.9-.3 1.7.2 1.4 1.4Z"></path>
+              </svg>
+            </span>
+            <span><strong>Telegram</strong><span>Instant updates</span></span>
+          </a>
+
+          <a class="portal-card youtube" href="#">
+            <span class="portal-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12a31 31 0 0 0 .5 4.8 3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8ZM9.7 15.2V8.8l6 3.2-6 3.2Z"></path>
+              </svg>
+            </span>
+            <span><strong>YouTube</strong><span>Guides &amp; tutorials</span></span>
+          </a>
+
+          <a class="portal-card whatsapp" href="#">
+            <span class="portal-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.5 3.5A11.8 11.8 0 0 0 12.1 0C5.6 0 .3 5.3.3 11.8c0 2.1.5 4.1 1.6 5.9L.2 24l6.4-1.7a11.8 11.8 0 0 0 5.5 1.4c6.5 0 11.8-5.3 11.8-11.8 0-3.2-1.2-6.1-3.4-8.4Zm-8.4 18.2a9.8 9.8 0 0 1-5-1.4l-.4-.2-3.8 1 1-3.7-.2-.4a9.8 9.8 0 1 1 8.4 4.7Zm5.4-7.3c-.3-.1-1.8-.9-2.1-1-.3-.1-.5-.1-.7.2l-1 1.2c-.2.3-.4.3-.7.1a8 8 0 0 1-2.4-1.5 8.7 8.7 0 0 1-1.7-2.1c-.2-.3 0-.5.1-.6l.5-.5.3-.5c.1-.2 0-.4 0-.5l-1-2.3c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1.1 1-1.1 2.5s1.1 2.9 1.2 3.1c.1.2 2.2 3.4 5.3 4.7.7.3 1.3.5 1.8.6.8.2 1.4.2 2 .1.6-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.1-.3-.2-.6-.3Z"></path>
+              </svg>
+            </span>
+            <span><strong>WhatsApp</strong><span>Priority support</span></span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <!-- 6. Floating navigation with an elevated central action -->
+    <nav class="bottom-nav" aria-label="Primary navigation">
+      <a class="nav-item active" href="#" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10M9 20v-6h6v6"></path></svg>
+        <span>Home</span>
+      </a>
+
+      <a class="nav-item" href="/feed">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        <span>Social</span>
+      </a>
+
+      <a class="nav-item center" href="/reselling">
+        <span class="center-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2H4l2.66 12.42A2 2 0 0 0 8.61 16h7.72a2 2 0 0 0 2-1.61L20 6H5"></path></svg>
+        </span>
+        <span>Reselling</span>
+      </a>
+
+      <a class="nav-item" href="/jobs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M12 12v.01"></path></svg>
+        <span>Micro Jobs</span>
+      </a>
+
+      <a class="nav-item" href="/profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+</body>
+</html>
