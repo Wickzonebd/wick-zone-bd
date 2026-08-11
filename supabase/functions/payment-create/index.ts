@@ -165,9 +165,9 @@ Deno.serve(async (req: Request) => {
       itemName,
       // UddoktaPay returns its own invoice_id to this URL. The internal Taskora
       // invoice remains in provider metadata and is recovered during verification.
-      successUrl: `${appUrl}/payment/success`,
-      failedUrl: `${appUrl}/payment/failed?invoice=${encodeURIComponent(invoiceNumber)}`,
-      cancelledUrl: `${appUrl}/payment/cancelled?invoice=${encodeURIComponent(invoiceNumber)}`,
+      successUrl: `${appUrl}/payment/success?invoice=${encodeURIComponent(invoiceNumber)}&type=${encodeURIComponent(paymentType)}`,
+      failedUrl: `${appUrl}/payment/failed?invoice=${encodeURIComponent(invoiceNumber)}&type=${encodeURIComponent(paymentType)}`,
+      cancelledUrl: `${appUrl}/payment/cancelled?invoice=${encodeURIComponent(invoiceNumber)}&type=${encodeURIComponent(paymentType)}`,
       webhookUrl: `${supabaseUrl}/functions/v1/payment-webhook`,
     });
   } catch (error) {

@@ -140,18 +140,31 @@ export function PaymentResultClient({ mode }: { mode: "success" | "failed" | "ca
   const search = useSearchParams();
   const { language } = useI18n();
   const invoice = search.get("invoice");
+  const providerInvoice = search.get("invoice_id");
+  const retryType = search.get("type") === "verification" ? "verification" : "micro_jobs";
   const [payment, setPayment] = useState<PaymentRow | null>(null);
   const [loading, setLoading] = useState(mode === "success");
+  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (mode !== "success" || !invoice) { setLoading(false); return; }
+    if (mode !== "success") { setLoading(false); return; }
     const load = async () => {
       const supabase = getSupabaseBrowserClient(); if (!supabase) { setLoading(false); return; }
-      const { data } = await supabase.from("payments").select("id,invoice_id,transaction_id,provider_transaction_id,amount,currency,payment_method,status,payment_type,item_name,customer_name,customer_email,customer_phone,created_at,paid_at").eq("invoice_id", invoice).maybeSingle();
+      let resolvedInvoice = invoice;
+      if (providerInvoice) {
+        const { data: verificationData, error: verifyError } = await supabase.functions.invoke("payment-verify", {
+          body: { invoiceId: invoice || undefined, providerInvoiceId: providerInvoice },
+        });
+        if (verifyError) setVerificationError(await friendlyPaymentError(verifyError, language));
+        const result = verificationData as { invoiceId?: string } | null;
+        resolvedInvoice = result?.invoiceId || resolvedInvoice;
+      }
+      if (!resolvedInvoice) { setVerificationError(language === "bn" ? "পেমেন্ট রেফারেন্স পাওয়া যায়নি।" : "Payment reference was not found."); setLoading(false); return; }
+      const { data } = await supabase.from("payments").select("id,invoice_id,transaction_id,provider_transaction_id,amount,currency,payment_method,status,payment_type,item_name,customer_name,customer_email,customer_phone,created_at,paid_at").eq("invoice_id", resolvedInvoice).maybeSingle();
       setPayment((data as PaymentRow | null) ?? null); setLoading(false);
     };
     void load();
-  }, [invoice, mode]);
+  }, [invoice, providerInvoice, mode, language]);
 
   const verified = payment?.status === "paid";
   const effectiveMode = mode === "success" && !loading && !verified ? "failed" : mode;
@@ -159,7 +172,7 @@ export function PaymentResultClient({ mode }: { mode: "success" | "failed" | "ca
     ? { title: language === "bn" ? "পেমেন্ট সফল" : "Payment Successful", text: language === "bn" ? "পেমেন্টটি সার্ভারে যাচাই করা হয়েছে।" : "This payment was verified by the server." }
     : effectiveMode === "cancelled"
       ? { title: language === "bn" ? "পেমেন্ট সম্পন্ন হয়নি" : "Payment Cancelled", text: language === "bn" ? "কোনো টাকা Paid হিসেবে রেকর্ড করা হয়নি।" : "No purchase was marked as paid." }
-      : { title: language === "bn" ? "পেমেন্ট ব্যর্থ" : "Payment Failed", text: language === "bn" ? "পেমেন্টটি verified Paid অবস্থায় পাওয়া যায়নি।" : "The payment was not found in a verified Paid state." };
+      : { title: language === "bn" ? "পেমেন্ট সম্পন্ন হয়নি" : "Payment Not Completed", text: verificationError || (language === "bn" ? "পেমেন্টটি সফল হিসেবে যাচাই করা যায়নি।" : "The payment could not be verified as successful.") };
   const Icon = effectiveMode === "success" ? CheckCircle2 : CircleX;
 
   return <AppShell hidePrimaryNav><main className="payment-page"><div className="payment-container"><section className="payment-result-card">
@@ -178,7 +191,7 @@ export function PaymentResultClient({ mode }: { mode: "success" | "failed" | "ca
         {verified && payment && <Link className="primary-button" href={`/invoice/${encodeURIComponent(payment.invoice_id)}`}><ReceiptText size={18} />{language === "bn" ? "ইনভয়েস দেখুন" : "View Invoice"}</Link>}
         {verified && payment?.payment_type === "micro_jobs" && <Link className="secondary-button" href="/jobs">{language === "bn" ? "Micro Jobs-এ যান" : "Go to Micro Jobs"}</Link>}
         {verified && payment?.payment_type === "verification" && <Link className="secondary-button" href="/profile">{language === "bn" ? "প্রোফাইল দেখুন" : "View Profile"}</Link>}
-        {!verified && invoice && <Link className="primary-button" href={`/payment/checkout?type=micro_jobs`}>{language === "bn" ? "আবার চেষ্টা করুন" : "Retry Payment"}</Link>}
+        {!verified && <Link className="primary-button" href={`/payment/checkout?type=${retryType}`}>{language === "bn" ? "আবার চেষ্টা করুন" : "Retry Payment"}</Link>}
         <Link className="secondary-button" href="/dashboard">{language === "bn" ? "ড্যাশবোর্ড" : "Go to Dashboard"}</Link>
       </div>
     </>}
