@@ -132,4 +132,5 @@ begin
 end;
 $$;
 
+revoke all on function public.place_reselling_order(text,text,text,text,text) from public, anon;
 grant execute on function public.place_reselling_order(text,text,text,text,text) to authenticated;
