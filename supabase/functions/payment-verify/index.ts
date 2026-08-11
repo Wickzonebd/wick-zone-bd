@@ -1,7 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2.112.2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2.112.2/cors";
 import { verifyProviderPayment } from "../_shared/payment-provider.ts";
 
-const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
+const headers = { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" };
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
 
 type PaymentRow = {
@@ -15,6 +16,7 @@ type PaymentRow = {
 };
 
 Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return reply({ error: "method_not_allowed" }, 405);
   const authorization = req.headers.get("Authorization");
   if (!authorization) return reply({ error: "unauthorized" }, 401);

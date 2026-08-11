@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth-provider";
 import { useI18n } from "@/components/i18n-provider";
 import { TaskoraLockup } from "@/components/taskora-brand";
 import { formatMoney } from "@/lib/money";
+import { friendlyPaymentError } from "@/lib/payment-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type OrderRow = {
@@ -23,7 +24,6 @@ type OrderRow = {
 
 type PaymentSettings = {
   payment_enabled: boolean;
-  provider_name: string | null;
   currency: string;
   merchant_name: string;
   terms_text: string | null;
@@ -45,7 +45,7 @@ export function ResellingPaymentCheckoutClient({ orderId }: { orderId: string })
       if (!supabase) { setError("Payment service is unavailable."); setLoading(false); return; }
       const [orderResult, settingsResult] = await Promise.all([
         supabase.from("reselling_orders").select("id,order_code,total,status,payment_status,contact_name,contact_mobile,delivery_address").eq("id", orderId).eq("user_id", user.id).maybeSingle(),
-        supabase.from("payment_settings").select("payment_enabled,provider_name,currency,merchant_name,terms_text").eq("id", true).maybeSingle(),
+        supabase.from("payment_settings").select("payment_enabled,currency,merchant_name,terms_text").eq("id", true).maybeSingle(),
       ]);
       if (orderResult.error || !orderResult.data) setError(language === "bn" ? "অর্ডারটি পাওয়া যায়নি।" : "Order not found.");
       if (settingsResult.error || !settingsResult.data) setError(language === "bn" ? "পেমেন্ট সেটিংস পাওয়া যায়নি।" : "Payment settings are unavailable.");
@@ -75,7 +75,7 @@ export function ResellingPaymentCheckoutClient({ orderId }: { orderId: string })
       if (url.protocol !== "https:") throw new Error("Payment provider returned an insecure checkout URL.");
       window.location.assign(url.toString());
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Payment could not be prepared.");
+      setError(await friendlyPaymentError(cause, language));
       setProcessing(false);
     }
   };
@@ -84,20 +84,20 @@ export function ResellingPaymentCheckoutClient({ orderId }: { orderId: string })
     <div className="payment-brand"><TaskoraLockup markSize={40} /></div>
     {loading ? <div className="payment-loading"><LoaderCircle className="profile-spinner" /><span>{language === "bn" ? "অর্ডার লোড হচ্ছে..." : "Loading order..."}</span></div> : order ? <>
       <div className="payment-title-block"><span>{settings?.merchant_name || "Taskora"}</span><h1>{language === "bn" ? "অর্ডার পেমেন্ট" : "Order Payment"}</h1><p>{language === "bn" ? "Taskora Store অর্ডারের নিরাপদ অনলাইন পেমেন্ট।" : "Secure online payment for your Taskora Store order."}</p></div>
-      <div className="payment-secure"><ShieldCheck size={19} /><div><strong>{language === "bn" ? "সার্ভার-ভেরিফাইড পেমেন্ট" : "Server-verified payment"}</strong><small>{language === "bn" ? "গেটওয়ে verification ছাড়া অর্ডার Paid হবে না" : "The order is never marked paid without gateway verification"}</small></div></div>
+      <div className="payment-secure"><ShieldCheck size={19} /><div><strong>{language === "bn" ? "নিরাপদ অনলাইন পেমেন্ট" : "Secure online payment"}</strong><small>{language === "bn" ? "পেমেন্ট সফল হলে অর্ডারটি স্বয়ংক্রিয়ভাবে আপডেট হবে" : "Your order updates automatically after a successful payment"}</small></div></div>
       <div className="payment-details">
         <div><span>{language === "bn" ? "অর্ডার" : "Order"}</span><strong>{order.order_code}</strong></div>
         <div><span>{language === "bn" ? "গ্রাহক" : "Customer"}</span><strong>{order.contact_name}</strong></div>
         <div><span>{language === "bn" ? "মোবাইল" : "Mobile"}</span><strong>{order.contact_mobile}</strong></div>
         <div><span>{language === "bn" ? "ডেলিভারি" : "Delivery"}</span><strong>{order.delivery_address}</strong></div>
-        <div><span>{language === "bn" ? "গেটওয়ে" : "Payment provider"}</span><strong>{settings?.provider_name || "—"}</strong></div>
+        <div><span>{language === "bn" ? "পেমেন্ট" : "Payment"}</span><strong>{language === "bn" ? "নিরাপদ অনলাইন চেকআউট" : "Secure online checkout"}</strong></div>
       </div>
       <div className="payment-total"><span>{language === "bn" ? "মোট পরিশোধযোগ্য" : "Total payable"}</span><strong>{amount > 0 ? formatMoney(amount, settings?.currency || "BDT", language) : "—"}</strong></div>
       {alreadyPaid && <div className="form-message success"><PackageCheck size={17} /> {language === "bn" ? "এই অর্ডারটি ইতিমধ্যে Paid।" : "This order is already paid."}</div>}
       {cancelled && <div className="form-message error">{language === "bn" ? "Cancelled অর্ডারে পেমেন্ট করা যাবে না।" : "A cancelled order cannot be paid."}</div>}
       {!settings?.payment_enabled && !alreadyPaid && <div className="form-message error">{language === "bn" ? "অনলাইন পেমেন্ট এখন বন্ধ আছে।" : "Online payments are currently disabled."}</div>}
       {error && <div className="form-message error">{error}</div>}
-      {!alreadyPaid && <button className="primary-button payment-pay-button" disabled={!canPay} onClick={() => void pay()}>{processing ? <><LoaderCircle className="profile-spinner" size={19} />{language === "bn" ? "পেমেন্ট প্রস্তুত হচ্ছে..." : "Preparing payment..."}</> : <><LockKeyhole size={18} />{language === "bn" ? "Pay Now" : "Pay Now"}</>}</button>}
+      {!alreadyPaid && <button className="primary-button payment-pay-button" disabled={!canPay} onClick={() => void pay()}>{processing ? <><LoaderCircle className="profile-spinner" size={19} />{language === "bn" ? "পেমেন্ট প্রস্তুত হচ্ছে..." : "Preparing payment..."}</> : <><LockKeyhole size={18} />{language === "bn" ? "এখন পেমেন্ট করুন" : "Pay securely"}</>}</button>}
       <Link className="secondary-button payment-cancel-button" href="/reselling?view=orders"><ShoppingBag size={17} />{language === "bn" ? "অর্ডারে ফিরে যান" : "Back to Orders"}</Link>
       {settings?.terms_text && <p className="payment-terms">{settings.terms_text}</p>}
     </> : <><div className="payment-result-card"><h1>{language === "bn" ? "অর্ডার পাওয়া যায়নি" : "Order not found"}</h1>{error && <p>{error}</p>}<Link className="primary-button" href="/reselling?view=orders">{language === "bn" ? "অর্ডার দেখুন" : "View Orders"}</Link></div></>}

@@ -1,11 +1,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2.112.2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2.112.2/cors";
 import { createProviderCheckout } from "../_shared/payment-provider.ts";
 
-const jsonHeaders = { "Content-Type": "application/json", "Cache-Control": "no-store" };
+const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" };
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: jsonHeaders });
 const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return reply({ error: "method_not_allowed" }, 405);
   const authorization = req.headers.get("Authorization");
   if (!authorization) return reply({ error: "unauthorized" }, 401);
