@@ -1,0 +1,35 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowLeft, ReceiptText, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AppShell } from "@/components/app-shell";
+import { useAuth } from "@/components/auth-provider";
+import { formatMoney } from "@/lib/money";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+
+type PaymentDetail={id:string;user_id:string;invoice_id:string;transaction_id:string|null;provider_transaction_id:string|null;amount:number|string;currency:string;payment_method:string|null;status:string;payment_type:string;item_id:string|null;item_name:string;customer_name:string|null;customer_email:string|null;customer_phone:string|null;provider_response:unknown;provider_session_id:string|null;created_at:string;paid_at:string|null;failed_at:string|null;cancelled_at:string|null};
+type Audit={id:number;event:string;details:unknown;created_at:string};
+type Invoice={invoice_number:string;status:string;issued_at:string;paid_at:string|null};
+
+export function AdminPaymentDetailClient({paymentId}:{paymentId:string}){
+  const {isAdmin,loading:authLoading}=useAuth(); const [payment,setPayment]=useState<PaymentDetail|null>(null); const [audit,setAudit]=useState<Audit[]>([]); const [invoice,setInvoice]=useState<Invoice|null>(null); const [loading,setLoading]=useState(true); const [error,setError]=useState<string|null>(null);
+  useEffect(()=>{const load=async()=>{if(authLoading)return;if(!isAdmin){setLoading(false);return;}const supabase=getSupabaseBrowserClient();if(!supabase){setError("Supabase unavailable");setLoading(false);return;}const [p,a,i]=await Promise.all([
+    supabase.from("payments").select("id,user_id,invoice_id,transaction_id,provider_transaction_id,amount,currency,payment_method,status,payment_type,item_id,item_name,customer_name,customer_email,customer_phone,provider_response,provider_session_id,created_at,paid_at,failed_at,cancelled_at").eq("id",paymentId).maybeSingle(),
+    supabase.from("payment_audit_logs").select("id,event,details,created_at").eq("payment_id",paymentId).order("created_at",{ascending:false}).limit(100),
+    supabase.from("invoices").select("invoice_number,status,issued_at,paid_at").eq("payment_id",paymentId).maybeSingle()
+  ]);if(p.error||!p.data)setError(p.error?.message||"Payment not found");setPayment((p.data as PaymentDetail|null)??null);setAudit((a.data as Audit[])??[]);setInvoice((i.data as Invoice|null)??null);setLoading(false);};void load();},[paymentId,isAdmin,authLoading]);
+  if(authLoading||loading)return <AppShell hidePrimaryNav><main className="payment-page"><div className="payment-loading">Loading transaction…</div></main></AppShell>;
+  if(!isAdmin)return <AppShell><main className="payment-page"><div className="payment-result-card"><ShieldCheck size={38}/><h1>Administrator access required</h1></div></main></AppShell>;
+  if(error||!payment)return <AppShell hidePrimaryNav><main className="payment-page"><div className="payment-result-card"><h1>Payment unavailable</h1><p>{error}</p><Link className="primary-button" href="/admin/payments"><ArrowLeft size={17}/>Back to Payments</Link></div></main></AppShell>;
+  const raw=JSON.stringify(payment.provider_response??{},null,2).slice(0,12000);
+  return <AppShell hidePrimaryNav><main className="payment-page"><div className="payment-admin-container">
+    <section className="payment-history-head"><div><span>ADMIN · TRANSACTION</span><h1>{payment.invoice_id}</h1><p>{payment.item_name}</p></div><ShieldCheck size={34}/></section>
+    <section className="payment-admin-panel"><div className="payment-details result"><div><span>Status</span><strong>{payment.status}</strong></div><div><span>Amount</span><strong>{formatMoney(Number(payment.amount),payment.currency,"en")}</strong></div><div><span>Type</span><strong>{payment.payment_type}</strong></div><div><span>Method</span><strong>{payment.payment_method||"—"}</strong></div><div><span>Transaction ID</span><strong>{payment.transaction_id||"—"}</strong></div><div><span>Provider Transaction</span><strong>{payment.provider_transaction_id||"—"}</strong></div><div><span>Provider Session</span><strong>{payment.provider_session_id||"—"}</strong></div><div><span>Created</span><strong>{new Date(payment.created_at).toLocaleString()}</strong></div><div><span>Paid</span><strong>{payment.paid_at?new Date(payment.paid_at).toLocaleString():"—"}</strong></div></div></section>
+    <section className="payment-admin-panel"><h2>Customer & Purchase</h2><div className="payment-details result"><div><span>User ID</span><strong>{payment.user_id}</strong></div><div><span>Name</span><strong>{payment.customer_name||"—"}</strong></div><div><span>Email</span><strong>{payment.customer_email||"—"}</strong></div><div><span>Phone</span><strong>{payment.customer_phone||"—"}</strong></div><div><span>Item</span><strong>{payment.item_name}</strong></div><div><span>Item ID</span><strong>{payment.item_id||"—"}</strong></div></div></section>
+    <section className="payment-admin-panel"><h2>Invoice</h2><div className="payment-details result"><div><span>Invoice</span><strong>{invoice?.invoice_number||payment.invoice_id}</strong></div><div><span>Status</span><strong>{invoice?.status||"—"}</strong></div><div><span>Issued</span><strong>{invoice?.issued_at?new Date(invoice.issued_at).toLocaleString():"—"}</strong></div></div><Link className="primary-button" href={`/invoice/${encodeURIComponent(payment.invoice_id)}`}><ReceiptText size={17}/>Open Invoice</Link></section>
+    <section className="payment-admin-panel"><h2>Provider Response</h2><p className="muted">Raw provider status is shown for diagnostics. Payment API secrets are never stored or displayed here.</p><pre style={{whiteSpace:"pre-wrap",wordBreak:"break-word",maxHeight:420,overflow:"auto",padding:14,borderRadius:14,background:"#111",color:"#f4f4f4",fontSize:12}}>{raw||"{}"}</pre></section>
+    <section className="payment-admin-panel"><h2>Audit Timeline</h2><div className="payment-admin-list">{audit.length?audit.map(row=><article key={row.id}><div><strong>{row.event}</strong><span>{new Date(row.created_at).toLocaleString()}</span></div><pre style={{whiteSpace:"pre-wrap",wordBreak:"break-word",fontSize:12,margin:0}}>{JSON.stringify(row.details??{},null,2)}</pre></article>):<p>No audit events recorded.</p>}</div></section>
+    <Link className="secondary-button" href="/admin/payments"><ArrowLeft size={17}/>Back to Payments</Link>
+  </div></main></AppShell>;
+}
