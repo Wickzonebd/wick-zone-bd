@@ -43,7 +43,19 @@ export function PaymentOutcomeClient({ mode }: { mode: "success" | "failed" | "c
     setLoading(false);
   }, [invoice]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    const initialize = async () => {
+      if (!invoice) { setLoading(false); return; }
+      const supabase = getSupabaseBrowserClient();
+      if (mode === "success" && supabase) {
+        await supabase.functions.invoke("payment-verify", { body: { invoiceId: invoice } });
+      }
+      if (active) await load();
+    };
+    void initialize();
+    return () => { active = false; };
+  }, [mode, invoice, load]);
 
   useEffect(() => {
     if (mode !== "success" || !invoice || payment?.status === "paid" || attempts >= 6) return;
@@ -71,7 +83,7 @@ export function PaymentOutcomeClient({ mode }: { mode: "success" | "failed" | "c
   const text = verified
     ? (language === "bn" ? "গেটওয়ে verification সম্পন্ন হয়েছে এবং ক্রয়টি সক্রিয় করা হয়েছে।" : "Gateway verification is complete and the purchase has been activated.")
     : stillProcessing
-      ? (language === "bn" ? "Provider webhook/verification শেষ হওয়ার জন্য অপেক্ষা করা হচ্ছে। এই পেজটি নিজে থেকেই আবার চেক করছে।" : "Waiting for provider webhook/verification. This page is checking again automatically.")
+      ? (language === "bn" ? "Provider verification/webhook শেষ হওয়ার জন্য অপেক্ষা করা হচ্ছে। এই পেজটি নিজে থেকেই আবার চেক করছে।" : "Waiting for provider verification/webhook. This page is checking again automatically.")
       : (language === "bn" ? "Server-verified Paid record পাওয়া যায়নি। কোনো entitlement Paid হিসেবে চালু করা হয়নি।" : "No server-verified Paid record was found. No paid entitlement was activated.");
 
   const Icon = verified ? CheckCircle2 : stillProcessing ? LoaderCircle : CircleX;
