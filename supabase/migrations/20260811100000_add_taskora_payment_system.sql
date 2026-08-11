@@ -105,6 +105,7 @@ as $$
 $$;
 
 revoke all on function public.next_taskora_invoice_number() from public, anon, authenticated;
+grant execute on function public.next_taskora_invoice_number() to service_role;
 
 create or replace function public.is_payment_admin()
 returns boolean
@@ -268,23 +269,31 @@ begin
   insert into public.payment_audit_logs(payment_id, invoice_id, event, details)
   values (pay.id, pay.invoice_id, 'payment_verified', jsonb_build_object('transaction_id', pay.transaction_id));
 
-  insert into public.notifications(user_id, title, body, category)
-  values (
-    pay.user_id,
-    'Payment successful',
-    case
-      when pay.payment_type = 'micro_jobs' then 'আপনার পেমেন্ট সফলভাবে সম্পন্ন হয়েছে। Micro Jobs অ্যাক্সেস সক্রিয় করা হয়েছে।'
-      when pay.payment_type = 'verification' then 'আপনার পেমেন্ট সফলভাবে সম্পন্ন হয়েছে। Verified Badge সক্রিয় করা হয়েছে।'
-      else 'আপনার পেমেন্ট সফলভাবে সম্পন্ন হয়েছে।'
-    end,
-    'wallet'
-  );
+  -- Notification delivery is non-critical. A notification schema change must not
+  -- roll back an otherwise verified payment or its purchased entitlement.
+  begin
+    insert into public.notifications(user_id, title, body, category)
+    values (
+      pay.user_id,
+      'Payment successful',
+      case
+        when pay.payment_type = 'micro_jobs' then 'আপনার পেমেন্ট সফলভাবে সম্পন্ন হয়েছে। Micro Jobs অ্যাক্সেস সক্রিয় করা হয়েছে।'
+        when pay.payment_type = 'verification' then 'আপনার পেমেন্ট সফলভাবে সম্পন্ন হয়েছে। Verified Badge সক্রিয় করা হয়েছে।'
+        else 'আপনার পেমেন্ট সফলভাবে সম্পন্ন হয়েছে।'
+      end,
+      'wallet'
+    );
+  exception when others then
+    insert into public.payment_audit_logs(payment_id, invoice_id, event, details)
+    values (pay.id, pay.invoice_id, 'notification_failed', jsonb_build_object('message', sqlerrm));
+  end;
 
   return pay;
 end;
 $$;
 
 revoke all on function public.finalize_verified_payment(uuid,text,text,text,jsonb) from public, anon, authenticated;
+grant execute on function public.finalize_verified_payment(uuid,text,text,text,jsonb) to service_role;
 
 create or replace function public.mark_payment_failed(
   p_payment_id uuid,
@@ -315,3 +324,4 @@ end;
 $$;
 
 revoke all on function public.mark_payment_failed(uuid,text,jsonb) from public, anon, authenticated;
+grant execute on function public.mark_payment_failed(uuid,text,jsonb) to service_role;
