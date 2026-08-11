@@ -54,16 +54,29 @@ type UddoktaPayVerificationResponse = {
 };
 
 function required(name: string) {
-  let value = Deno.env.get(name)?.trim();
+  let value = Deno.env.get(name)?.replace(/[\u200B-\u200D\u2060\uFEFF]/g, "").trim();
   // Normalize harmless formatting artifacts sometimes pasted into a secret
   // value without ever logging or exposing the secret itself.
-  if (value?.startsWith(`${name}=`)) value = value.slice(name.length + 1).trim();
+  if (value) value = value.replace(new RegExp(`^(?:export\\s+)?${name}\\s*=\\s*`, "i"), "").trim();
   if (value && value.length >= 2) {
     const first = value[0];
     const last = value[value.length - 1];
     if ((first === '"' && last === '"') || (first === "'" && last === "'") || (first === "`" && last === "`")) {
       value = value.slice(1, -1).trim();
     }
+  }
+  // UddoktaPay keys are normally copied as a single token. Removing accidental
+  // whitespace within a 40-character hexadecimal key is safe and prevents a
+  // pasted line break from changing the credential sent to the provider.
+  if (name === "PAYMENT_API_KEY") {
+    const compact = value?.replace(/\s+/g, "") ?? "";
+    if (/^[0-9a-f]{40}$/i.test(compact)) value = compact;
+  }
+  // Accept an accidentally pasted Markdown link while still using only the
+  // configured HTTPS origin/path. This never changes a valid plain URL.
+  if (name === "PAYMENT_BASE_URL" && value?.startsWith("[")) {
+    const match = value.match(/https:\/\/[^\s\])]+/i);
+    if (match) value = match[0];
   }
   if (!value) throw new Error(`missing_${name.toLowerCase()}`);
   return value;
@@ -93,13 +106,12 @@ function safeEqual(left: string, right: string) {
 }
 
 async function readJson<T>(response: Response, failureCode: string): Promise<T> {
+  const body = await response.text();
+  if (response.status === 401 || response.status === 403) throw new Error("provider_auth_failed");
+  if (!response.ok) throw new Error(`${failureCode}_http_${response.status}`);
   let data: unknown;
-  try { data = await response.json(); }
+  try { data = JSON.parse(body); }
   catch { throw new Error(`${failureCode}_invalid_json`); }
-  if (!response.ok) {
-    if (response.status === 401 || response.status === 403) throw new Error("provider_auth_failed");
-    throw new Error(`${failureCode}_http_${response.status}`);
-  }
   return data as T;
 }
 

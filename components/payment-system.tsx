@@ -7,7 +7,6 @@ import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
 import { useI18n } from "@/components/i18n-provider";
-import { ManualPaymentPanel, type ManualPaymentMethod } from "@/components/manual-payment-panel";
 import { TaskoraLockup } from "@/components/taskora-brand";
 import { formatMoney } from "@/lib/money";
 import { friendlyPaymentError } from "@/lib/payment-errors";
@@ -23,8 +22,6 @@ type CheckoutConfig = {
   supportEmail?: string | null;
   termsText?: string | null;
   price?: number | string | null;
-  manualPaymentEnabled?: boolean;
-  manualMethods?: ManualPaymentMethod[];
 };
 
 type PaymentRow = {
@@ -128,11 +125,10 @@ export function PaymentCheckoutClient() {
         </div>
         <div className="payment-total"><span>{language === "bn" ? "মোট পরিশোধযোগ্য" : "Total payable"}</span><strong>{price > 0 ? formatMoney(price, currency, language) : "—"}</strong></div>
         {!config?.enabled && <div className="form-message error">{language === "bn" ? "এই মুহূর্তে অনলাইন পেমেন্ট চালু নেই।" : "Online payments are not enabled right now."}</div>}
-        {Boolean(config?.enabled && config.manualPaymentEnabled && config.manualMethods?.length) && <ManualPaymentPanel methods={config.manualMethods || []} amount={price} currency={currency} paymentType={type} disabled={!user || price <= 0} />}
-        {Boolean(config?.enabled && config.manualPaymentEnabled && !config.manualMethods?.length) && <div className="form-message error">{language === "bn" ? "মোবাইল ব্যাংকিং নম্বর এখনো সেট করা হয়নি। Admin panel থেকে bKash/Nagad নম্বর সেট করুন।" : "No mobile banking number is configured yet. Add bKash/Nagad details from the admin panel."}</div>}
+        {config?.enabled && <div className="payment-method-handoff"><ShieldCheck size={18} /><div><strong>{language === "bn" ? "পরবর্তী ধাপে পেমেন্ট পদ্ধতি নির্বাচন করুন" : "Choose your payment method on the next step"}</strong><small>{language === "bn" ? "নিরাপদ চেকআউট পেজে উপলভ্য bKash, Nagad, Rocket বা অন্য মাধ্যম থেকে পছন্দ করুন।" : "Select bKash, Nagad, Rocket, or another available method on the secure checkout page."}</small></div></div>}
         {error && <div className="form-message error">{error}</div>}
         <button className="primary-button payment-pay-button" onClick={() => void startPayment()} disabled={!canPay}>
-          {processing ? <><LoaderCircle className="profile-spinner" size={19} />{language === "bn" ? "গেটওয়ে প্রস্তুত করা হচ্ছে..." : "Preparing gateway..."}</> : <><LockKeyhole size={18} />{language === "bn" ? "অটোমেটিক গেটওয়ে দিয়ে পেমেন্ট" : "Pay with automatic gateway"}</>}
+          {processing ? <><LoaderCircle className="profile-spinner" size={19} />{language === "bn" ? "নিরাপদ চেকআউট খোলা হচ্ছে..." : "Opening secure checkout..."}</> : <><LockKeyhole size={18} />{language === "bn" ? "পেমেন্ট পদ্ধতি নির্বাচন করুন" : "Continue to Secure Payment"}</>}
         </button>
         <Link className="secondary-button payment-cancel-button" href="/dashboard">{language === "bn" ? "বাতিল" : "Cancel"}</Link>
         {config?.termsText && <p className="payment-terms">{config.termsText}</p>}
