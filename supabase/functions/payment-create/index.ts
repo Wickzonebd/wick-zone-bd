@@ -3,6 +3,7 @@ import { createProviderCheckout } from "../_shared/payment-provider.ts";
 
 const jsonHeaders = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: jsonHeaders });
+const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return reply({ error: "method_not_allowed" }, 405);
@@ -22,7 +23,9 @@ Deno.serve(async (req: Request) => {
   let body: { paymentType?: string; itemId?: string };
   try { body = await req.json(); } catch { return reply({ error: "invalid_json" }, 400); }
   const paymentType = body.paymentType;
-  if (!paymentType || !["micro_jobs", "verification"].includes(paymentType)) return reply({ error: "invalid_payment_type" }, 400);
+  if (!paymentType || !["micro_jobs", "verification", "reselling"].includes(paymentType)) {
+    return reply({ error: "invalid_payment_type" }, 400);
+  }
 
   const [{ data: settings, error: settingsError }, { data: profile }, { data: privateProfile }] = await Promise.all([
     admin.from("payment_settings").select("payment_enabled,provider_name,currency,merchant_name,micro_job_activation_price,verification_price,verification_enabled").eq("id", true).single(),
@@ -33,32 +36,80 @@ Deno.serve(async (req: Request) => {
   if (!settings.payment_enabled) return reply({ error: "payments_disabled" }, 503);
   if (paymentType === "verification" && !settings.verification_enabled) return reply({ error: "verification_disabled" }, 409);
 
-  const amount = Number(paymentType === "micro_jobs" ? settings.micro_job_activation_price : settings.verification_price);
-  if (!Number.isFinite(amount) || amount <= 0) return reply({ error: "invalid_admin_price" }, 503);
+  let amount = 0;
+  let itemId: string | null = body.itemId?.trim() || null;
+  let itemName = "";
+  let itemDescription = "";
+  let customerName = profile?.full_name || user.email || "Taskora Member";
+  let customerPhone = privateProfile?.mobile || null;
 
   if (paymentType === "micro_jobs") {
+    amount = Number(settings.micro_job_activation_price);
+    itemName = "Micro Jobs Activation";
+    itemDescription = "One-time Taskora Micro Jobs activation";
     const { data: membership } = await admin.from("memberships").select("status").eq("user_id", user.id).maybeSingle();
     if (membership?.status === "active") return reply({ error: "already_active" }, 409);
+    itemId = null;
+  } else if (paymentType === "verification") {
+    amount = Number(settings.verification_price);
+    itemName = "Blue Verification Badge";
+    itemDescription = "Taskora Social profile verification";
+    if (profile?.is_social_verified) return reply({ error: "already_verified" }, 409);
+    itemId = null;
+  } else {
+    if (!itemId || !isUuid(itemId)) return reply({ error: "invalid_reselling_order" }, 400);
+    const { data: order, error: orderError } = await admin
+      .from("reselling_orders")
+      .select("id,order_code,total,status,payment_status,contact_name,contact_mobile")
+      .eq("id", itemId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (orderError) return reply({ error: "reselling_order_unavailable" }, 500);
+    if (!order) return reply({ error: "reselling_order_not_found" }, 404);
+    if (order.payment_status === "paid") return reply({ error: "order_already_paid" }, 409);
+    if (order.status === "cancelled") return reply({ error: "order_cancelled" }, 409);
+    amount = Number(order.total);
+    itemName = `Reselling Order ${order.order_code}`;
+    itemDescription = `Payment for Taskora Store order ${order.order_code}`;
+    customerName = order.contact_name || customerName;
+    customerPhone = order.contact_mobile || customerPhone;
   }
-  if (paymentType === "verification" && profile?.is_social_verified) return reply({ error: "already_verified" }, 409);
+
+  if (!Number.isFinite(amount) || amount <= 0) return reply({ error: paymentType === "reselling" ? "invalid_order_total" : "invalid_admin_price" }, 503);
+
+  let duplicateQuery = admin
+    .from("payments")
+    .select("id,invoice_id,provider_checkout_url,status")
+    .eq("user_id", user.id)
+    .eq("payment_type", paymentType)
+    .in("status", ["pending", "processing"])
+    .order("created_at", { ascending: false })
+    .limit(1);
+  duplicateQuery = itemId ? duplicateQuery.eq("item_id", itemId) : duplicateQuery.is("item_id", null);
+  const { data: existingPending } = await duplicateQuery.maybeSingle();
+  if (existingPending?.provider_checkout_url) {
+    return reply({
+      checkoutUrl: existingPending.provider_checkout_url,
+      invoiceId: existingPending.invoice_id,
+      reused: true,
+    });
+  }
 
   const appUrl = Deno.env.get("APP_URL")?.replace(/\/$/, "");
   if (!appUrl) return reply({ error: "missing_app_url" }, 503);
 
-  // Allocate the invoice only after all user, price and eligibility checks pass.
   const { data: invoiceNumber, error: invoiceError } = await admin.rpc("next_taskora_invoice_number");
   if (invoiceError || !invoiceNumber) return reply({ error: "invoice_generation_failed" }, 500);
 
-  const itemName = paymentType === "micro_jobs" ? "Micro Jobs Activation" : "Blue Verification Badge";
   let provider;
   try {
     provider = await createProviderCheckout({
       invoiceId: invoiceNumber,
       amount,
       currency: settings.currency,
-      customerName: profile?.full_name || user.email || "Taskora Member",
+      customerName,
       customerEmail: user.email || "",
-      customerPhone: privateProfile?.mobile || null,
+      customerPhone,
       itemName,
       successUrl: `${appUrl}/payment/success?invoice=${encodeURIComponent(invoiceNumber)}`,
       failedUrl: `${appUrl}/payment/failed?invoice=${encodeURIComponent(invoiceNumber)}`,
@@ -70,6 +121,10 @@ Deno.serve(async (req: Request) => {
     return reply({ error: message }, message === "provider_adapter_required" ? 503 : 502);
   }
 
+  let checkoutUrl: URL;
+  try { checkoutUrl = new URL(provider.checkoutUrl); } catch { return reply({ error: "invalid_provider_checkout_url" }, 502); }
+  if (checkoutUrl.protocol !== "https:") return reply({ error: "insecure_provider_checkout_url" }, 502);
+
   const { data: payment, error: paymentError } = await admin.from("payments").insert({
     user_id: user.id,
     invoice_id: invoiceNumber,
@@ -77,14 +132,15 @@ Deno.serve(async (req: Request) => {
     currency: settings.currency,
     status: "pending",
     payment_type: paymentType,
-    item_id: body.itemId || null,
+    item_id: itemId,
     item_name: itemName,
-    customer_name: profile?.full_name || null,
+    customer_name: customerName || null,
     customer_email: user.email || null,
-    customer_phone: privateProfile?.mobile || null,
-    provider_checkout_url: provider.checkoutUrl,
+    customer_phone: customerPhone,
+    provider_checkout_url: checkoutUrl.toString(),
     provider_session_id: provider.providerSessionId || null,
     provider_response: provider.raw,
+    metadata: paymentType === "reselling" ? { reselling_order_id: itemId } : {},
   }).select("id,invoice_id").single();
   if (paymentError || !payment) return reply({ error: "payment_record_failed" }, 500);
 
@@ -92,11 +148,11 @@ Deno.serve(async (req: Request) => {
     invoice_number: invoiceNumber,
     user_id: user.id,
     payment_id: payment.id,
-    customer_name: profile?.full_name || null,
+    customer_name: customerName || null,
     customer_email: user.email || null,
-    customer_phone: privateProfile?.mobile || null,
+    customer_phone: customerPhone,
     item_name: itemName,
-    item_description: paymentType === "micro_jobs" ? "One-time Taskora Micro Jobs activation" : "Taskora Social profile verification",
+    item_description: itemDescription,
     subtotal: amount,
     discount: 0,
     total: amount,
@@ -108,6 +164,12 @@ Deno.serve(async (req: Request) => {
     return reply({ error: "invoice_record_failed" }, 500);
   }
 
-  await admin.from("payment_audit_logs").insert({ payment_id: payment.id, invoice_id: invoiceNumber, event: "payment_created" });
-  return reply({ checkoutUrl: provider.checkoutUrl, invoiceId: invoiceNumber });
+  await admin.from("payment_audit_logs").insert({
+    payment_id: payment.id,
+    invoice_id: invoiceNumber,
+    event: "payment_created",
+    details: { payment_type: paymentType, item_id: itemId, amount, currency: settings.currency },
+  });
+
+  return reply({ checkoutUrl: checkoutUrl.toString(), invoiceId: invoiceNumber });
 });
