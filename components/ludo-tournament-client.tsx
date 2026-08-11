@@ -113,7 +113,14 @@ export function LudoTournamentClient() {
     setJoiningId(tournament.id); setMessage(null);
     const { error } = await supabase.rpc("ludo_join_tournament", { p_tournament_id: tournament.id });
     setJoiningId(null);
-    if (error) { setMessage({ type: "error", text: error.message }); return; }
+    if (error) {
+      const text = error.message.includes("Insufficient balance")
+        ? (language === "bn" ? "এই টুর্নামেন্টে যোগ দেওয়ার জন্য ওয়ালেটে পর্যাপ্ত ব্যালেন্স নেই।" : "Your wallet balance is not enough for this tournament entry fee.")
+        : error.message.includes("permission denied")
+          ? (language === "bn" ? "টুর্নামেন্ট সেবার অনুমতি আপডেট হচ্ছে। আবার চেষ্টা করুন।" : "Tournament access is being updated. Please try again.")
+          : error.message;
+      setMessage({ type: "error", text }); return;
+    }
     setMessage({ type: "success", text: t("ludo.joinSuccess") });
     await load();
   };

@@ -54,7 +54,17 @@ type UddoktaPayVerificationResponse = {
 };
 
 function required(name: string) {
-  const value = Deno.env.get(name)?.trim();
+  let value = Deno.env.get(name)?.trim();
+  // Normalize harmless formatting artifacts sometimes pasted into a secret
+  // value without ever logging or exposing the secret itself.
+  if (value?.startsWith(`${name}=`)) value = value.slice(name.length + 1).trim();
+  if (value && value.length >= 2) {
+    const first = value[0];
+    const last = value[value.length - 1];
+    if ((first === '"' && last === '"') || (first === "'" && last === "'") || (first === "`" && last === "`")) {
+      value = value.slice(1, -1).trim();
+    }
+  }
   if (!value) throw new Error(`missing_${name.toLowerCase()}`);
   return value;
 }
@@ -86,7 +96,10 @@ async function readJson<T>(response: Response, failureCode: string): Promise<T> 
   let data: unknown;
   try { data = await response.json(); }
   catch { throw new Error(`${failureCode}_invalid_json`); }
-  if (!response.ok) throw new Error(`${failureCode}_http_${response.status}`);
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) throw new Error("provider_auth_failed");
+    throw new Error(`${failureCode}_http_${response.status}`);
+  }
   return data as T;
 }
 

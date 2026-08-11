@@ -25,6 +25,10 @@ const messages: Record<string, { bn: string; en: string }> = {
     bn: "পেমেন্ট প্রস্তুত হচ্ছে। কয়েক সেকেন্ড পর আবার চেষ্টা করুন।",
     en: "Your payment is being prepared. Please try again in a few seconds.",
   },
+  provider_auth_failed: {
+    bn: "পেমেন্ট প্রদানকারী বর্তমান নিরাপদ কনফিগারেশনটি গ্রহণ করেনি। কোনো টাকা কাটা হয়নি। অ্যাডমিন সেটিং যাচাই করছে।",
+    en: "The payment provider rejected the current secure configuration. No charge was made; the administrator is checking the setup.",
+  },
   order_already_paid: {
     bn: "এই অর্ডারের পেমেন্ট ইতিমধ্যে সম্পন্ন হয়েছে।",
     en: "This order has already been paid.",

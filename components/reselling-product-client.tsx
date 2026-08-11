@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, BadgePercent, CheckCircle2, FileText, Heart, Layers3, Minus, PackageCheck, PackageOpen, Plus, ShieldCheck, ShoppingBag, ShoppingCart, Star, Store } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -32,6 +32,7 @@ interface ProductReview { id: string; rating: number; body: string | null; creat
 
 export function ResellingProductClient() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const { user } = useAuth();
   const { language } = useI18n();
   const { general } = useSiteConfig();
@@ -104,35 +105,20 @@ export function ResellingProductClient() {
   const buy = async () => {
     if (!product || product.stock_count === 0 || buying) return;
     setBuyMessage(null);
-    if (general.paymentGatewayStatus !== "configured") {
-      setBuyMessage(general.paymentPendingMessage || (language === "bn" ? "পেমেন্ট গেটওয়ে এখনো চালু হয়নি।" : "The payment gateway is not configured yet."));
+    setBuying(true);
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase || !user) {
+      setBuyMessage(language === "bn" ? "পেমেন্টের আগে আবার লগইন করুন।" : "Sign in again before starting payment.");
+      setBuying(false);
       return;
     }
-    setBuying(true);
-    try {
-      const supabase = getSupabaseBrowserClient();
-      const { data: sessionData } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
-      const accessToken = sessionData.session?.access_token;
-      if (!accessToken) {
-        setBuyMessage(language === "bn" ? "পেমেন্টের আগে আবার লগইন করুন।" : "Sign in again before starting payment.");
-        return;
-      }
-      const response = await fetch("/api/payments/create", {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ type: "reselling_product", productId: product.id }),
-      });
-      const result = await response.json() as { checkoutUrl?: string; error?: string };
-      if (!response.ok || !result.checkoutUrl) {
-        setBuyMessage(result.error || (language === "bn" ? "পেমেন্ট শুরু করা যায়নি।" : "Payment could not be started."));
-        return;
-      }
-      window.location.assign(result.checkoutUrl);
-    } catch {
-      setBuyMessage(language === "bn" ? "পেমেন্ট সার্ভারের সাথে যোগাযোগ করা যায়নি।" : "Could not reach the payment server.");
-    } finally {
+    const { error: cartError } = await supabase.rpc("set_reselling_cart_item", { p_product_id: product.id, p_quantity: quantity });
+    if (cartError) {
+      setBuyMessage(cartError.message);
       setBuying(false);
+      return;
     }
+    router.push("/reselling?view=cart");
   };
 
   const addToCart = async () => {
@@ -188,9 +174,9 @@ export function ResellingProductClient() {
           </div>
           <div className="reselling-detail-cart-row"><div className="reselling-detail-quantity"><button type="button" disabled={quantity <= 1} onClick={() => setQuantity((value) => Math.max(1,value-1))}><Minus size={16} /></button><strong>{quantity}</strong><button type="button" disabled={product.stock_count != null && quantity >= product.stock_count} onClick={() => setQuantity((value) => value+1)}><Plus size={16} /></button></div><button type="button" className="reselling-cart-button" disabled={product.stock_count === 0 || addingCart} onClick={() => void addToCart()}><ShoppingCart size={20} />{addingCart ? (language === "bn" ? "যোগ হচ্ছে…" : "Adding…") : (language === "bn" ? "কার্টে যোগ করুন" : "Add to Cart")}</button></div>
           <Link href="/reselling?view=cart" className="reselling-view-cart-link"><ShoppingCart size={17} />{language === "bn" ? "কার্ট দেখুন ও অর্ডার করুন" : "View cart and order"}</Link>
-          <button type="button" className="reselling-buy-button secondary-payment" disabled={product.stock_count === 0 || buying} onClick={() => void buy()}><ShoppingBag size={20} />{buying ? (language === "bn" ? "পেমেন্ট প্রস্তুত হচ্ছে…" : "Preparing payment…") : (language === "bn" ? "সরাসরি পেমেন্ট" : "Direct payment")}</button>
+          <button type="button" className="reselling-buy-button secondary-payment" disabled={product.stock_count === 0 || buying} onClick={() => void buy()}><ShoppingBag size={20} />{buying ? (language === "bn" ? "চেকআউট প্রস্তুত হচ্ছে…" : "Preparing checkout…") : (language === "bn" ? "এখনই কিনুন" : "Buy now")}</button>
           {buyMessage && <div className="reselling-payment-message"><ShieldCheck size={17} /><span>{buyMessage}</span></div>}
-          <p className="reselling-payment-note"><ShieldCheck size={15} />{language === "bn" ? "পেমেন্ট গেটওয়ে চালু হলে Buy Now থেকে সরাসরি নিরাপদ পেমেন্ট হবে। সফল পেমেন্টের পর ডেলিভারির জন্য অ্যাডমিন/সাপোর্টের সাথে যোগাযোগ করা যাবে।" : "When the payment gateway is enabled, Buy Now will open secure direct payment. After a successful payment, contact admin/support for delivery."}</p>
+          <p className="reselling-payment-note"><ShieldCheck size={15} />{language === "bn" ? "Buy now চাপলে যোগাযোগের তথ্য পূরণ করে নিরাপদ অনলাইন পেমেন্টে যেতে পারবেন। যাচাইকৃত পেমেন্ট ছাড়া অর্ডার প্রসেস হবে না।" : "Buy now opens checkout for your contact details and secure online payment. Orders are never processed without verified payment."}</p>
         </div>
       </section>
 
