@@ -161,7 +161,9 @@ Deno.serve(async (req: Request) => {
       customerEmail: user.email || "",
       customerPhone,
       itemName,
-      successUrl: `${appUrl}/payment/success?invoice=${encodeURIComponent(invoiceNumber)}`,
+      // UddoktaPay returns its own invoice_id to this URL. The internal Taskora
+      // invoice remains in provider metadata and is recovered during verification.
+      successUrl: `${appUrl}/payment/success`,
       failedUrl: `${appUrl}/payment/failed?invoice=${encodeURIComponent(invoiceNumber)}`,
       cancelledUrl: `${appUrl}/payment/cancelled?invoice=${encodeURIComponent(invoiceNumber)}`,
       webhookUrl: `${supabaseUrl}/functions/v1/payment-webhook`,
@@ -169,7 +171,7 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : "provider_error";
     await admin.rpc("mark_payment_failed", { p_payment_id: payment.id, p_event: "failed", p_provider_response: { error: message } });
-    return reply({ error: message }, message === "provider_adapter_required" ? 503 : 502);
+    return reply({ error: message }, 502);
   }
 
   let checkoutUrl: URL;
@@ -198,7 +200,7 @@ Deno.serve(async (req: Request) => {
     payment_id: payment.id,
     invoice_id: invoiceNumber,
     event: "payment_created",
-    details: { payment_type: paymentType, item_id: itemId, amount, currency: settings.currency },
+    details: { payment_type: paymentType, item_id: itemId, amount, currency: settings.currency, provider: "UddoktaPay" },
   });
 
   return reply({ checkoutUrl: checkoutUrl.toString(), invoiceId: invoiceNumber });
