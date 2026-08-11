@@ -28,3 +28,13 @@ jobs:
         run: npm run lint
       - name: Build and test
         run: npm test
+      - name: Use Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check payment Edge Functions
+        run: >-
+          deno check
+          supabase/functions/payment-create/index.ts
+          supabase/functions/payment-verify/index.ts
+          supabase/functions/payment-webhook/index.ts
