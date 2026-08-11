@@ -29,39 +29,67 @@ type PaymentRow = {
 export function PaymentOutcomeClient({ mode }: { mode: "success" | "failed" | "cancelled" }) {
   const search = useSearchParams();
   const { language } = useI18n();
-  const invoice = search.get("invoice");
+  const initialInvoice = search.get("invoice");
+  const providerInvoice = search.get("invoice_id");
+  const [invoice, setInvoice] = useState<string | null>(initialInvoice);
   const [payment, setPayment] = useState<PaymentRow | null>(null);
-  const [loading, setLoading] = useState(Boolean(invoice));
+  const [loading, setLoading] = useState(Boolean(initialInvoice || providerInvoice));
   const [attempts, setAttempts] = useState(0);
 
-  const load = useCallback(async () => {
-    if (!invoice) { setLoading(false); return; }
+  const load = useCallback(async (targetInvoice?: string | null) => {
+    const value = targetInvoice || invoice;
+    if (!value) { setLoading(false); return null; }
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) { setLoading(false); return null; }
+    const { data } = await supabase.from("payments").select("id,invoice_id,transaction_id,provider_transaction_id,amount,currency,payment_method,status,payment_type,item_id,item_name,created_at,paid_at").eq("invoice_id", value).maybeSingle();
+    const row = (data as PaymentRow | null) ?? null;
+    setPayment(row);
+    setLoading(false);
+    return row;
+  }, [invoice]);
+
+  const verifyAndLoad = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from("payments").select("id,invoice_id,transaction_id,provider_transaction_id,amount,currency,payment_method,status,payment_type,item_id,item_name,created_at,paid_at").eq("invoice_id", invoice).maybeSingle();
-    setPayment((data as PaymentRow | null) ?? null);
-    setLoading(false);
-  }, [invoice]);
+    let resolvedInvoice = invoice;
+    if (mode === "success" && (invoice || providerInvoice)) {
+      const { data } = await supabase.functions.invoke("payment-verify", {
+        body: {
+          invoiceId: invoice || undefined,
+          providerInvoiceId: providerInvoice || undefined,
+        },
+      });
+      const verifiedInvoice = (data as { invoiceId?: string } | null)?.invoiceId;
+      if (verifiedInvoice) {
+        resolvedInvoice = verifiedInvoice;
+        if (verifiedInvoice !== invoice) setInvoice(verifiedInvoice);
+      }
+    }
+    await load(resolvedInvoice);
+  }, [mode, invoice, providerInvoice, load]);
 
   useEffect(() => {
     let active = true;
     const initialize = async () => {
-      if (!invoice) { setLoading(false); return; }
-      const supabase = getSupabaseBrowserClient();
-      if (mode === "success" && supabase) {
-        await supabase.functions.invoke("payment-verify", { body: { invoiceId: invoice } });
+      if (mode === "success") {
+        if (!initialInvoice && !providerInvoice) { setLoading(false); return; }
+        if (active) await verifyAndLoad();
+      } else {
+        if (active) await load(initialInvoice);
       }
-      if (active) await load();
     };
     void initialize();
     return () => { active = false; };
-  }, [mode, invoice, load]);
+  }, [mode, initialInvoice, providerInvoice, verifyAndLoad, load]);
 
   useEffect(() => {
-    if (mode !== "success" || !invoice || payment?.status === "paid" || attempts >= 6) return;
-    const timer = window.setTimeout(() => { setAttempts((value) => value + 1); void load(); }, 1800);
+    if (mode !== "success" || (!invoice && !providerInvoice) || payment?.status === "paid" || attempts >= 6) return;
+    const timer = window.setTimeout(() => {
+      setAttempts((value) => value + 1);
+      void verifyAndLoad();
+    }, 1800);
     return () => window.clearTimeout(timer);
-  }, [mode, invoice, payment?.status, attempts, load]);
+  }, [mode, invoice, providerInvoice, payment?.status, attempts, verifyAndLoad]);
 
   const verified = payment?.status === "paid";
   const stillProcessing = mode === "success" && !verified && attempts < 6 && (!payment || ["pending", "processing"].includes(payment.status));
@@ -81,9 +109,9 @@ export function PaymentOutcomeClient({ mode }: { mode: "success" | "failed" | "c
         ? (language === "bn" ? "পেমেন্ট বাতিল হয়েছে" : "Payment Cancelled")
         : (language === "bn" ? "পেমেন্ট সম্পন্ন হয়নি" : "Payment Not Completed");
   const text = verified
-    ? (language === "bn" ? "গেটওয়ে verification সম্পন্ন হয়েছে এবং ক্রয়টি সক্রিয় করা হয়েছে।" : "Gateway verification is complete and the purchase has been activated.")
+    ? (language === "bn" ? "UddoktaPay verification সম্পন্ন হয়েছে এবং ক্রয়টি সক্রিয় করা হয়েছে।" : "UddoktaPay verification is complete and the purchase has been activated.")
     : stillProcessing
-      ? (language === "bn" ? "Provider verification/webhook শেষ হওয়ার জন্য অপেক্ষা করা হচ্ছে। এই পেজটি নিজে থেকেই আবার চেক করছে।" : "Waiting for provider verification/webhook. This page is checking again automatically.")
+      ? (language === "bn" ? "UddoktaPay verification/webhook শেষ হওয়ার জন্য অপেক্ষা করা হচ্ছে। এই পেজটি নিজে থেকেই আবার চেক করছে।" : "Waiting for UddoktaPay verification/webhook. This page is checking again automatically.")
       : (language === "bn" ? "Server-verified Paid record পাওয়া যায়নি। কোনো entitlement Paid হিসেবে চালু করা হয়নি।" : "No server-verified Paid record was found. No paid entitlement was activated.");
 
   const Icon = verified ? CheckCircle2 : stillProcessing ? LoaderCircle : CircleX;
@@ -103,7 +131,7 @@ export function PaymentOutcomeClient({ mode }: { mode: "success" | "failed" | "c
       <div className="payment-result-actions">
         {verified && payment && <Link className="primary-button" href={`/invoice/${encodeURIComponent(payment.invoice_id)}`}><ReceiptText size={18} />{language === "bn" ? "ইনভয়েস দেখুন" : "View Invoice"}</Link>}
         {verified && <Link className="secondary-button" href={destinationHref}>{language === "bn" ? "চালিয়ে যান" : "Continue"}</Link>}
-        {!verified && stillProcessing && <button className="secondary-button" type="button" onClick={() => { setAttempts(0); setLoading(true); void load(); }}><RotateCw size={17} />{language === "bn" ? "এখনই আবার চেক করুন" : "Check Again"}</button>}
+        {!verified && stillProcessing && <button className="secondary-button" type="button" onClick={() => { setAttempts(0); setLoading(true); void verifyAndLoad(); }}><RotateCw size={17} />{language === "bn" ? "এখনই আবার চেক করুন" : "Check Again"}</button>}
         {!verified && !stillProcessing && payment && <Link className="primary-button" href={retryHref}>{language === "bn" ? "আবার চেষ্টা করুন" : "Retry Payment"}</Link>}
         <Link className="secondary-button" href="/profile/payments">{language === "bn" ? "পেমেন্ট হিস্ট্রি" : "Payment History"}</Link>
         <Link className="secondary-button" href="/dashboard">{language === "bn" ? "ড্যাশবোর্ড" : "Dashboard"}</Link>
