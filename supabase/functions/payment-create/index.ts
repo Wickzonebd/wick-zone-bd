@@ -88,12 +88,9 @@ Deno.serve(async (req: Request) => {
   duplicateQuery = itemId ? duplicateQuery.eq("item_id", itemId) : duplicateQuery.is("item_id", null);
   const { data: existingPending } = await duplicateQuery.maybeSingle();
   if (existingPending?.provider_checkout_url) {
-    return reply({
-      checkoutUrl: existingPending.provider_checkout_url,
-      invoiceId: existingPending.invoice_id,
-      reused: true,
-    });
+    return reply({ checkoutUrl: existingPending.provider_checkout_url, invoiceId: existingPending.invoice_id, reused: true });
   }
+  if (existingPending) return reply({ error: "payment_initializing", invoiceId: existingPending.invoice_id }, 409);
 
   const appUrl = Deno.env.get("APP_URL")?.replace(/\/$/, "");
   if (!appUrl) return reply({ error: "missing_app_url" }, 503);
@@ -101,31 +98,7 @@ Deno.serve(async (req: Request) => {
   const { data: invoiceNumber, error: invoiceError } = await admin.rpc("next_taskora_invoice_number");
   if (invoiceError || !invoiceNumber) return reply({ error: "invoice_generation_failed" }, 500);
 
-  let provider;
-  try {
-    provider = await createProviderCheckout({
-      invoiceId: invoiceNumber,
-      amount,
-      currency: settings.currency,
-      customerName,
-      customerEmail: user.email || "",
-      customerPhone,
-      itemName,
-      successUrl: `${appUrl}/payment/success?invoice=${encodeURIComponent(invoiceNumber)}`,
-      failedUrl: `${appUrl}/payment/failed?invoice=${encodeURIComponent(invoiceNumber)}`,
-      cancelledUrl: `${appUrl}/payment/cancelled?invoice=${encodeURIComponent(invoiceNumber)}`,
-      webhookUrl: `${supabaseUrl}/functions/v1/payment-webhook`,
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "provider_error";
-    return reply({ error: message }, message === "provider_adapter_required" ? 503 : 502);
-  }
-
-  let checkoutUrl: URL;
-  try { checkoutUrl = new URL(provider.checkoutUrl); } catch { return reply({ error: "invalid_provider_checkout_url" }, 502); }
-  if (checkoutUrl.protocol !== "https:") return reply({ error: "insecure_provider_checkout_url" }, 502);
-
-  const { data: payment, error: paymentError } = await admin.from("payments").insert({
+  const { data: payment, error: reservationError } = await admin.from("payments").insert({
     user_id: user.id,
     invoice_id: invoiceNumber,
     amount,
@@ -137,12 +110,26 @@ Deno.serve(async (req: Request) => {
     customer_name: customerName || null,
     customer_email: user.email || null,
     customer_phone: customerPhone,
-    provider_checkout_url: checkoutUrl.toString(),
-    provider_session_id: provider.providerSessionId || null,
-    provider_response: provider.raw,
     metadata: paymentType === "reselling" ? { reselling_order_id: itemId } : {},
   }).select("id,invoice_id").single();
-  if (paymentError || !payment) return reply({ error: "payment_record_failed" }, 500);
+
+  if (reservationError || !payment) {
+    if (reservationError?.code === "23505") {
+      let raceQuery = admin
+        .from("payments")
+        .select("invoice_id,provider_checkout_url")
+        .eq("user_id", user.id)
+        .eq("payment_type", paymentType)
+        .in("status", ["pending", "processing"])
+        .order("created_at", { ascending: false })
+        .limit(1);
+      raceQuery = itemId ? raceQuery.eq("item_id", itemId) : raceQuery.is("item_id", null);
+      const { data: raced } = await raceQuery.maybeSingle();
+      if (raced?.provider_checkout_url) return reply({ checkoutUrl: raced.provider_checkout_url, invoiceId: raced.invoice_id, reused: true });
+      return reply({ error: "payment_initializing", invoiceId: raced?.invoice_id || null }, 409);
+    }
+    return reply({ error: "payment_record_failed" }, 500);
+  }
 
   const { error: receiptError } = await admin.from("invoices").insert({
     invoice_number: invoiceNumber,
@@ -162,6 +149,49 @@ Deno.serve(async (req: Request) => {
   if (receiptError) {
     await admin.from("payments").delete().eq("id", payment.id);
     return reply({ error: "invoice_record_failed" }, 500);
+  }
+
+  let provider;
+  try {
+    provider = await createProviderCheckout({
+      invoiceId: invoiceNumber,
+      amount,
+      currency: settings.currency,
+      customerName,
+      customerEmail: user.email || "",
+      customerPhone,
+      itemName,
+      successUrl: `${appUrl}/payment/success?invoice=${encodeURIComponent(invoiceNumber)}`,
+      failedUrl: `${appUrl}/payment/failed?invoice=${encodeURIComponent(invoiceNumber)}`,
+      cancelledUrl: `${appUrl}/payment/cancelled?invoice=${encodeURIComponent(invoiceNumber)}`,
+      webhookUrl: `${supabaseUrl}/functions/v1/payment-webhook`,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "provider_error";
+    await admin.rpc("mark_payment_failed", { p_payment_id: payment.id, p_event: "failed", p_provider_response: { error: message } });
+    return reply({ error: message }, message === "provider_adapter_required" ? 503 : 502);
+  }
+
+  let checkoutUrl: URL;
+  try { checkoutUrl = new URL(provider.checkoutUrl); }
+  catch {
+    await admin.rpc("mark_payment_failed", { p_payment_id: payment.id, p_event: "failed", p_provider_response: { error: "invalid_provider_checkout_url" } });
+    return reply({ error: "invalid_provider_checkout_url" }, 502);
+  }
+  if (checkoutUrl.protocol !== "https:") {
+    await admin.rpc("mark_payment_failed", { p_payment_id: payment.id, p_event: "failed", p_provider_response: { error: "insecure_provider_checkout_url" } });
+    return reply({ error: "insecure_provider_checkout_url" }, 502);
+  }
+
+  const { error: providerUpdateError } = await admin.from("payments").update({
+    provider_checkout_url: checkoutUrl.toString(),
+    provider_session_id: provider.providerSessionId || null,
+    provider_response: provider.raw,
+    updated_at: new Date().toISOString(),
+  }).eq("id", payment.id);
+  if (providerUpdateError) {
+    await admin.rpc("mark_payment_failed", { p_payment_id: payment.id, p_event: "failed", p_provider_response: { error: "provider_state_save_failed" } });
+    return reply({ error: "provider_state_save_failed" }, 500);
   }
 
   await admin.from("payment_audit_logs").insert({
