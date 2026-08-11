@@ -12,22 +12,35 @@ Deno.serve(async (req: Request) => {
   try { verified = await verifyProviderWebhook(req, raw); }
   catch (error) {
     const message = error instanceof Error ? error.message : "verification_failed";
-    return reply({ error: message }, message === "provider_adapter_required" ? 503 : 401);
+    return reply({ error: message }, message === "invalid_webhook_auth" ? 401 : 400);
   }
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data: payment } = await admin.from("payments").select("id,invoice_id,amount,currency,status").eq("invoice_id", verified.invoiceId).maybeSingle();
+  const { data: payment } = await admin
+    .from("payments")
+    .select("id,invoice_id,amount,currency,status,provider_session_id")
+    .eq("invoice_id", verified.invoiceId)
+    .maybeSingle();
   if (!payment) return reply({ error: "payment_not_found" }, 404);
 
-  await admin.from("payment_audit_logs").insert({ payment_id: payment.id, invoice_id: payment.invoice_id, event: "webhook_received" });
+  await admin.from("payments").update({
+    provider_session_id: verified.providerInvoiceId,
+    updated_at: new Date().toISOString(),
+  }).eq("id", payment.id);
+
+  await admin.from("payment_audit_logs").insert({
+    payment_id: payment.id,
+    invoice_id: payment.invoice_id,
+    event: "webhook_received",
+    details: { provider: "UddoktaPay", provider_status: verified.providerStatus, provider_invoice: verified.providerInvoiceId },
+  });
 
   if (payment.status === "paid") return reply({ ok: true, duplicate: true });
-  if (!verified.paid) {
-    await admin.rpc("mark_payment_failed", { p_payment_id: payment.id, p_event: "failed", p_provider_response: verified.raw });
-    return reply({ ok: true, paid: false });
-  }
-  if (Number(payment.amount) !== Number(verified.amount)) return reply({ error: "amount_mismatch" }, 409);
+  if (verified.providerStatus === "pending") return reply({ ok: true, paid: false, pending: true });
+  if (!verified.paid) return reply({ ok: true, paid: false, status: verified.providerStatus });
+  if (Math.abs(Number(payment.amount) - Number(verified.amount)) > 0.009) return reply({ error: "amount_mismatch" }, 409);
   if (verified.currency && payment.currency !== verified.currency) return reply({ error: "currency_mismatch" }, 409);
+  if (!verified.transactionId?.trim()) return reply({ error: "missing_transaction_id" }, 409);
 
   const { data, error } = await admin.rpc("finalize_verified_payment", {
     p_payment_id: payment.id,
@@ -37,5 +50,5 @@ Deno.serve(async (req: Request) => {
     p_provider_response: verified.raw,
   });
   if (error) return reply({ error: error.message }, 500);
-  return reply({ ok: true, paymentId: data?.id, invoiceId: data?.invoice_id });
+  return reply({ ok: true, paymentId: data?.id, invoiceId: data?.invoice_id, providerInvoiceId: verified.providerInvoiceId });
 });

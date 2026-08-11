@@ -4,6 +4,16 @@ import { verifyProviderPayment } from "../_shared/payment-provider.ts";
 const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
 
+type PaymentRow = {
+  id: string;
+  user_id: string;
+  invoice_id: string;
+  amount: number | string;
+  currency: string;
+  status: string;
+  provider_session_id: string | null;
+};
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return reply({ error: "method_not_allowed" }, 405);
   const authorization = req.headers.get("Authorization");
@@ -19,39 +29,71 @@ Deno.serve(async (req: Request) => {
   const user = authData.user;
   if (authError || !user) return reply({ error: "unauthorized" }, 401);
 
-  let body: { invoiceId?: string };
+  let body: { invoiceId?: string; providerInvoiceId?: string };
   try { body = await req.json(); } catch { return reply({ error: "invalid_json" }, 400); }
-  const invoiceId = body.invoiceId?.trim();
-  if (!invoiceId || invoiceId.length > 80) return reply({ error: "invalid_invoice" }, 400);
+  const requestedInvoice = body.invoiceId?.trim() || null;
+  const requestedProviderInvoice = body.providerInvoiceId?.trim() || null;
+  if (requestedInvoice && requestedInvoice.length > 80) return reply({ error: "invalid_invoice" }, 400);
+  if (requestedProviderInvoice && requestedProviderInvoice.length > 160) return reply({ error: "invalid_provider_invoice" }, 400);
+  if (!requestedInvoice && !requestedProviderInvoice) return reply({ error: "invoice_required" }, 400);
 
-  const { data: payment, error: paymentError } = await admin
-    .from("payments")
-    .select("id,user_id,invoice_id,amount,currency,status")
-    .eq("invoice_id", invoiceId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (paymentError) return reply({ error: "payment_lookup_failed" }, 500);
-  if (!payment) return reply({ error: "payment_not_found" }, 404);
-  if (payment.status === "paid") return reply({ ok: true, paid: true, status: "paid", invoiceId });
-  if (["cancelled", "refunded"].includes(payment.status)) return reply({ ok: true, paid: false, status: payment.status, invoiceId });
+  let payment: PaymentRow | null = null;
+  if (requestedInvoice) {
+    const { data, error } = await admin
+      .from("payments")
+      .select("id,user_id,invoice_id,amount,currency,status,provider_session_id")
+      .eq("invoice_id", requestedInvoice)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (error) return reply({ error: "payment_lookup_failed" }, 500);
+    payment = (data as PaymentRow | null) ?? null;
+    if (!payment) return reply({ error: "payment_not_found" }, 404);
+    if (payment.status === "paid") return reply({ ok: true, paid: true, status: "paid", invoiceId: payment.invoice_id });
+    if (["cancelled", "refunded"].includes(payment.status)) return reply({ ok: true, paid: false, status: payment.status, invoiceId: payment.invoice_id });
+  }
+
+  const providerInvoiceId = requestedProviderInvoice || payment?.provider_session_id || null;
+  if (!providerInvoiceId) return reply({ error: "provider_invoice_required", invoiceId: payment?.invoice_id ?? null }, 409);
 
   let verified;
-  try { verified = await verifyProviderPayment(payment.invoice_id); }
+  try { verified = await verifyProviderPayment(providerInvoiceId); }
   catch (error) {
     const message = error instanceof Error ? error.message : "provider_verification_failed";
-    await admin.from("payment_audit_logs").insert({ payment_id: payment.id, invoice_id: payment.invoice_id, event: "manual_verification_error", details: { message } });
-    return reply({ error: message }, message === "provider_adapter_required" ? 503 : 502);
+    if (payment) {
+      await admin.from("payment_audit_logs").insert({ payment_id: payment.id, invoice_id: payment.invoice_id, event: "manual_verification_error", details: { message, provider_invoice: providerInvoiceId } });
+    }
+    return reply({ error: message }, 502);
   }
+
+  if (!payment) {
+    const { data, error } = await admin
+      .from("payments")
+      .select("id,user_id,invoice_id,amount,currency,status,provider_session_id")
+      .eq("invoice_id", verified.invoiceId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (error) return reply({ error: "payment_lookup_failed" }, 500);
+    payment = (data as PaymentRow | null) ?? null;
+    if (!payment) return reply({ error: "payment_not_found" }, 404);
+  }
+
+  if (verified.invoiceId !== payment.invoice_id) return reply({ error: "invoice_mismatch" }, 409);
+
+  await admin.from("payments").update({
+    provider_session_id: verified.providerInvoiceId,
+    updated_at: new Date().toISOString(),
+  }).eq("id", payment.id);
 
   await admin.from("payment_audit_logs").insert({
     payment_id: payment.id,
     invoice_id: payment.invoice_id,
     event: "manual_verification_checked",
-    details: { paid: verified.paid, provider_invoice: verified.invoiceId },
+    details: { paid: verified.paid, provider_status: verified.providerStatus, provider_invoice: verified.providerInvoiceId },
   });
 
-  if (verified.invoiceId !== payment.invoice_id) return reply({ error: "invoice_mismatch" }, 409);
-  if (!verified.paid) return reply({ ok: true, paid: false, status: payment.status, invoiceId });
+  if (!verified.paid) {
+    return reply({ ok: true, paid: false, status: verified.providerStatus === "pending" ? "processing" : payment.status, invoiceId: payment.invoice_id });
+  }
   if (Math.abs(Number(payment.amount) - Number(verified.amount)) > 0.009) return reply({ error: "amount_mismatch" }, 409);
   if (verified.currency && payment.currency !== verified.currency) return reply({ error: "currency_mismatch" }, 409);
   if (!verified.transactionId?.trim()) return reply({ error: "missing_transaction_id" }, 409);
@@ -65,5 +107,5 @@ Deno.serve(async (req: Request) => {
   });
   if (error) return reply({ error: error.message }, 500);
 
-  return reply({ ok: true, paid: true, status: "paid", paymentId: data?.id, invoiceId: data?.invoice_id });
+  return reply({ ok: true, paid: true, status: "paid", paymentId: data?.id, invoiceId: data?.invoice_id, providerInvoiceId: verified.providerInvoiceId });
 });
