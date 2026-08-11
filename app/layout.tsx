@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Hind_Siliguri, Inter } from "next/font/google";
 import { AppProviders } from "@/components/providers";
 import "./globals.css";
+import "./payment.css";
 
 const bengaliFont = Hind_Siliguri({
   variable: "--font-bengali",
