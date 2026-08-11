@@ -16,24 +16,20 @@ Deno.serve(async (req: Request) => {
   }
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data: payment } = await admin
-    .from("payments")
-    .select("id,invoice_id,amount,currency,status,provider_session_id")
-    .eq("invoice_id", verified.invoiceId)
-    .maybeSingle();
+  const { data: paymentRows, error: lookupError } = await admin.rpc("get_payment_for_provider", {
+    p_invoice_id: verified.invoiceId,
+  });
+  if (lookupError) return reply({ error: "payment_lookup_failed" }, 500);
+  const payment = Array.isArray(paymentRows) ? paymentRows[0] : null;
   if (!payment) return reply({ error: "payment_not_found" }, 404);
 
-  await admin.from("payments").update({
-    provider_session_id: verified.providerInvoiceId,
-    updated_at: new Date().toISOString(),
-  }).eq("id", payment.id);
-
-  await admin.from("payment_audit_logs").insert({
-    payment_id: payment.id,
-    invoice_id: payment.invoice_id,
-    event: "webhook_received",
-    details: { provider: "UddoktaPay", provider_status: verified.providerStatus, provider_invoice: verified.providerInvoiceId },
+  const { error: eventError } = await admin.rpc("record_payment_provider_event", {
+    p_payment_id: payment.id,
+    p_provider_invoice_id: verified.providerInvoiceId,
+    p_event: "webhook_received",
+    p_details: { provider: "UddoktaPay", provider_status: verified.providerStatus, provider_invoice: verified.providerInvoiceId },
   });
+  if (eventError) return reply({ error: "payment_state_save_failed" }, 500);
 
   if (payment.status === "paid") return reply({ ok: true, duplicate: true });
   if (verified.providerStatus === "pending") return reply({ ok: true, paid: false, pending: true });

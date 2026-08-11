@@ -41,7 +41,7 @@ Deno.serve(async (req: Request) => {
 
   let payment: PaymentRow | null = null;
   if (requestedInvoice) {
-    const { data, error } = await admin
+    const { data, error } = await userClient
       .from("payments")
       .select("id,user_id,invoice_id,amount,currency,status,provider_session_id")
       .eq("invoice_id", requestedInvoice)
@@ -62,13 +62,18 @@ Deno.serve(async (req: Request) => {
   catch (error) {
     const message = error instanceof Error ? error.message : "provider_verification_failed";
     if (payment) {
-      await admin.from("payment_audit_logs").insert({ payment_id: payment.id, invoice_id: payment.invoice_id, event: "manual_verification_error", details: { message, provider_invoice: providerInvoiceId } });
+      await admin.rpc("record_payment_provider_event", {
+        p_payment_id: payment.id,
+        p_provider_invoice_id: providerInvoiceId,
+        p_event: "manual_verification_error",
+        p_details: { message, provider_invoice: providerInvoiceId },
+      });
     }
     return reply({ error: message }, 502);
   }
 
   if (!payment) {
-    const { data, error } = await admin
+    const { data, error } = await userClient
       .from("payments")
       .select("id,user_id,invoice_id,amount,currency,status,provider_session_id")
       .eq("invoice_id", verified.invoiceId)
@@ -81,17 +86,13 @@ Deno.serve(async (req: Request) => {
 
   if (verified.invoiceId !== payment.invoice_id) return reply({ error: "invoice_mismatch" }, 409);
 
-  await admin.from("payments").update({
-    provider_session_id: verified.providerInvoiceId,
-    updated_at: new Date().toISOString(),
-  }).eq("id", payment.id);
-
-  await admin.from("payment_audit_logs").insert({
-    payment_id: payment.id,
-    invoice_id: payment.invoice_id,
-    event: "manual_verification_checked",
-    details: { paid: verified.paid, provider_status: verified.providerStatus, provider_invoice: verified.providerInvoiceId },
+  const { error: eventError } = await admin.rpc("record_payment_provider_event", {
+    p_payment_id: payment.id,
+    p_provider_invoice_id: verified.providerInvoiceId,
+    p_event: "manual_verification_checked",
+    p_details: { paid: verified.paid, provider_status: verified.providerStatus, provider_invoice: verified.providerInvoiceId },
   });
+  if (eventError) return reply({ error: "payment_state_save_failed" }, 500);
 
   if (!verified.paid) {
     return reply({ ok: true, paid: false, status: verified.providerStatus === "pending" ? "processing" : payment.status, invoiceId: payment.invoice_id });
