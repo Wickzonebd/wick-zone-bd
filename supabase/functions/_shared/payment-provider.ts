@@ -60,9 +60,14 @@ export async function verifyProviderPayment(_transactionOrInvoiceId: string): Pr
   throw new Error("provider_adapter_required");
 }
 
-export function verifyWebhookAuthenticity(_request: Request, _rawBody: string): boolean {
-  const secret = Deno.env.get("PAYMENT_WEBHOOK_SECRET")?.trim();
-  if (!secret) return false;
-  // Provider-specific signature validation must follow official documentation.
-  return false;
+/**
+ * Provider-specific webhook signature validation AND payload-field mapping belong
+ * here. The webhook handler must not guess field names from an undocumented body.
+ * After authenticity is established, this adapter must independently verify the
+ * transaction against the provider status/verification API before returning.
+ */
+export async function verifyProviderWebhook(_request: Request, _rawBody: string): Promise<ProviderVerification> {
+  assertProviderEnvironment();
+  required("PAYMENT_WEBHOOK_SECRET");
+  throw new Error("provider_adapter_required");
 }
